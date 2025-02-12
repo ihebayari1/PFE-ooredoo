@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: jdbc:postgesql://localhost:5432/report_gen_builder
+    username: IhebPFE
+    password: ihebA1118
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.postgreSLDialect
+  mail:
+    host: localhost
+    port: 1025
+    username: iheb
+    password: iheb1
+    properties:
+      mail:
+        smtp:
+          trust: "*"
+        auth: true
+        starttls:
+          enable: true
+          connectiontimeout: 10000
+          timeout: 4000
+          writetimeout: 10000
+  application:
+    security:
+      jwt:
+        secret-key: VJh1D6T8U5d8zXhJc7KwZz8D9R9aXy+AB1dYYdHmnfg=
+        # Tabka nhar w mbaaed token ysirlou expiration
+        expiration: 8640000
