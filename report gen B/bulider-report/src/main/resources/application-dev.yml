@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgesql://localhost:5432/report_gen_builder
-    username: IhebPFE
-    password: ihebA1118
+    url: jdbc:postgresql://localhost:5432/report_gen_builder
+    username: postgres
+    password: iheb1118
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -13,7 +13,7 @@ spring:
       hibernate:
         format_sql: true
     database: postgresql
-    database-platform: org.hibernate.dialect.postgreSLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   mail:
     host: localhost
     port: 1025
@@ -32,6 +32,12 @@ spring:
   application:
     security:
       jwt:
-        secret-key: VJh1D6T8U5d8zXhJc7KwZz8D9R9aXy+AB1dYYdHmnfg=
-        # Tabka nhar w mbaaed token ysirlou expiration
-        expiration: 8640000
+        secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+        expiration: 86400000
+
+
+    mailing:
+      frontend:
+        activation-url: http://localhost:4200/activation-account
+
+
