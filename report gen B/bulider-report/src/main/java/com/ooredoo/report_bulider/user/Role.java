@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "_role")
@@ -41,6 +42,21 @@ public class Role {
     }
 
     public Role() {
+    }
+
+    public Role(String name) {
+        this.name = name;
+    }
+    public static Role mainAdmin() {
+        return new Role("MAIN_ADMIN");
+    }
+
+    public static Role departmentAdmin() {
+        return new Role("DEPARTMENT_ADMIN");
+    }
+
+    public static Role user() {
+        return new Role("USER");
     }
 
     public static RoleBuilder builder() {
@@ -128,8 +144,20 @@ public class Role {
             return new Role(this.id, this.name, this.users, this.createdAt, this.updatedAt);
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Role role = (Role) o;
+            return Objects.equals(name, role.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name);
+        }
         public String toString() {
-            return "Role.RoleBuilder(id=" + this.id + ", name=" + this.name + ", users=" + this.users + ", createdAt=" + this.createdAt + ", updatedAt=" + this.updatedAt + ")";
+            return "Role.RoleBuilder(id=" + this.id + ", name=" + this.name + ", createdAt=" + this.createdAt + ", updatedAt=" + this.updatedAt + ")";
         }
     }
 }

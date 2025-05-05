@@ -1,7 +1,10 @@
 package com.ooredoo.report_bulider.config;
 
 
+import com.ooredoo.report_bulider.entity.mapper.ComponentPropertyMapper;
+import com.ooredoo.report_bulider.repo.FormComponentRepository;
 import com.ooredoo.report_bulider.securityImpl.UserDetailsServiceImpl;
+import org.mapstruct.factory.Mappers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,4 +41,5 @@ public class BeansConfig {
         return new BCryptPasswordEncoder();
 
     }
+
 }

@@ -23,7 +23,14 @@ public class RegistrationRequest {
     @NotBlank(message = "email is mandatory")
     private String email;
 
-    RegistrationRequest(@NotEmpty(message = "Firstname is mandatory") @NotBlank(message = "Firstname is mandatory") String firstname, @NotEmpty(message = "Lastname is mandatory") @NotBlank(message = "Lastname is mandatory") String lastname, @Size(min = 8, message = "Password should be 8 characters minimum") @NotEmpty(message = "password is mandatory") @NotBlank(message = "password is mandatory") String password, @Email(message = "Email is not Formatted") @NotEmpty(message = "email is mandatory") @NotBlank(message = "email is mandatory") String email) {
+    RegistrationRequest(@NotEmpty(message = "Firstname is mandatory")
+                        @NotBlank(message = "Firstname is mandatory") String firstname,
+                        @NotEmpty(message = "Lastname is mandatory")
+                        @NotBlank(message = "Lastname is mandatory")
+                        String lastname, @Size(min = 8, message = "Password should be 8 characters minimum")
+                        @NotEmpty(message = "password is mandatory") @NotBlank(message = "password is mandatory")
+                        String password, @Email(message = "Email is not Formatted") @NotEmpty(message = "email is mandatory")
+                        @NotBlank(message = "email is mandatory") String email) {
         this.firstname = firstname;
         this.lastname = lastname;
         this.password = password;

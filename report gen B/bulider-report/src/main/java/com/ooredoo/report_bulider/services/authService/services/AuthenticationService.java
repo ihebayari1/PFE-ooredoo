@@ -61,7 +61,7 @@ public class AuthenticationService {
 
     public void register(RegistrationRequest request) throws MessagingException {
 
-        var userRole = roleRepository.findByName("USER")
+        var userRole = roleRepository.findByName("MAIN_ADMIN")
                 .orElseThrow(() -> new IllegalStateException("Role user not initialized"));
 
         var user = User.builder()

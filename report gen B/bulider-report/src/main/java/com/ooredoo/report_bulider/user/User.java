@@ -1,6 +1,7 @@
 package com.ooredoo.report_bulider.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.ooredoo.report_bulider.entity.Department;
 import com.ooredoo.report_bulider.entity.Form;
 import com.ooredoo.report_bulider.entity.FormSubmission;
 import jakarta.persistence.*;
@@ -42,6 +43,7 @@ public class User implements UserDetails, Principal {
     private List<Role> roles;
 
     @ManyToMany(mappedBy = "assignedUsers")
+    @JsonIgnore
     private Set<Form> assignedForms;
 
     @OneToMany(mappedBy = "creator")
@@ -53,14 +55,16 @@ public class User implements UserDetails, Principal {
     private List<FormSubmission> submissions;
 
     //for the entity listeners
-
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
     @LastModifiedDate
     @Column(insertable = false)
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     public User(Integer id_user, String firstname, String lastname, LocalDate dateOfBirth, String password, String email, boolean enabled, boolean accountLocked, List<Role> roles, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id_user = id_user;
@@ -79,21 +83,6 @@ public class User implements UserDetails, Principal {
     public User() {
     }
 
-    public User(Integer id_user, String firstname, String lastname, LocalDate dateOfBirth, String password, String email, boolean enabled, boolean accountLocked, List<Role> roles, Set<Form> assignedForms, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id_user = id_user;
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.dateOfBirth = dateOfBirth;
-        this.password = password;
-        this.email = email;
-        this.enabled = enabled;
-        this.accountLocked = accountLocked;
-        this.roles = roles;
-        this.assignedForms = assignedForms;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
     public User(Integer id_user, String firstname, String lastname, LocalDate dateOfBirth, String password, String email, boolean enabled, boolean accountLocked, List<Role> roles, Set<Form> assignedForms, Set<Form> createdForms, List<FormSubmission> submissions, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id_user = id_user;
         this.firstname = firstname;
@@ -109,6 +98,29 @@ public class User implements UserDetails, Principal {
         this.submissions = submissions;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public User(Integer id_user, String firstname, String lastname,
+                LocalDate dateOfBirth, String password, String email,
+                boolean enabled, boolean accountLocked, List<Role> roles,
+                Set<Form> assignedForms, Set<Form> createdForms,
+                List<FormSubmission> submissions, LocalDateTime createdAt,
+                LocalDateTime updatedAt, Department department) {
+        this.id_user = id_user;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.dateOfBirth = dateOfBirth;
+        this.password = password;
+        this.email = email;
+        this.enabled = enabled;
+        this.accountLocked = accountLocked;
+        this.roles = roles;
+        this.assignedForms = assignedForms;
+        this.createdForms = createdForms;
+        this.submissions = submissions;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.department = department;
     }
 
     public static UserBuilder builder() {
@@ -355,7 +367,7 @@ public class User implements UserDetails, Principal {
     }
 
     public String toString() {
-        return "User(id_user=" + this.getId_user() + ", firstname=" + this.getFirstname() + ", lastname=" + this.getLastname() + ", dateOfBirth=" + this.getDateOfBirth() + ", password=" + this.getPassword() + ", email=" + this.getEmail() + ", enabled=" + this.isEnabled() + ", accountLocked=" + this.isAccountLocked() + ", roles=" + this.getRoles() + ", assignedForms=" + this.getAssignedForms() + ", createdForms=" + this.getCreatedForms() + ", submissions=" + this.getSubmissions() + ", createdAt=" + this.getCreatedAt() + ", updatedAt=" + this.getUpdatedAt() + ")";
+        return "User(id_user=" + this.getId_user() + ", firstname=" + this.getFirstname() + ", lastname=" + this.getLastname() + ", dateOfBirth=" + this.getDateOfBirth() + ", password=" + this.getPassword() + ", email=" + this.getEmail() + ", enabled=" + this.isEnabled() + ", accountLocked=" + this.isAccountLocked() ;
     }
 
     public static class UserBuilder {
@@ -458,6 +470,13 @@ public class User implements UserDetails, Principal {
         }
     }
 
+    public Department getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(Department department) {
+        this.department = department;
+    }
     public boolean hasRole(String roleName) {
         return roles.stream()
                 .anyMatch(role -> role.getName().equals(roleName));

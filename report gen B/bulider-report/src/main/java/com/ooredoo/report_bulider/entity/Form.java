@@ -20,11 +20,11 @@ public class Form {
     private String description;
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt=LocalDateTime.now();
 
     @LastModifiedDate
     @Column(insertable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt=LocalDateTime.now();;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
