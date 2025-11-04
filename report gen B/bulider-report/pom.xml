@@ -11,7 +11,7 @@
 	<groupId>com.ooredoo</groupId>
 	<artifactId>bulider-report</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>bulider-report-api</name>
+	<name>builder-report-api</name>
 	<description>Report Builder for OOREDOO</description>
 	<url/>
 	<licenses>
@@ -109,7 +109,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>
