@@ -1,0 +1,103 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--gray-50);
+}
+
+.content {
+  flex: 1;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+  padding: var(--spacing-xl);
+  min-height: 100vh;
+}
+
+.content-header {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    .header-title {
+      h1 {
+        color: var(--gray-900);
+        font-size: 1.875rem;
+        font-weight: 700;
+        margin: 0;
+      }
+      
+      .breadcrumb {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+        margin-top: var(--spacing-xs);
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: center;
+    }
+  }
+}
+
+.content-body {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  padding: var(--spacing-xl);
+  min-height: calc(100vh - 200px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0;
+    padding: var(--spacing-md);
+  }
+  
+  .content-header {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      
+      .header-title h1 {
+        font-size: 1.5rem;
+      }
+      
+      .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  }
+  
+  .content-body {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--gray-500);
+  
+  .loading-spinner {
+    margin-right: var(--spacing-md);
+  }
+}

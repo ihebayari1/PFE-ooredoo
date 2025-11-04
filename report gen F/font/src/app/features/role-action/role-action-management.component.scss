@@ -1,0 +1,222 @@
+.role-action-management-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.management-toolbar {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.role-action-list-card,
+.form-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  
+  mat-spinner {
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.role-action-table {
+  width: 100%;
+  
+  th {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  td {
+    padding: 12px 8px;
+  }
+}
+
+.action-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  .action-icon {
+    font-size: 20px;
+    color: #666;
+  }
+  
+  .action-details {
+    display: flex;
+    flex-direction: column;
+    
+    .action-key {
+      font-weight: 500;
+      color: #333;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+  }
+}
+
+.description-text {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.endpoint-info {
+  .endpoint-chip {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+  }
+  
+  .no-endpoint {
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+  }
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #ccc;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+}
+
+.role-action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  
+  .form-row {
+    display: flex;
+    gap: 16px;
+    
+    &.single {
+      flex-direction: column;
+    }
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }
+}
+
+// Material Design enhancements
+mat-card-header {
+  padding-bottom: 16px;
+}
+
+mat-card-content {
+  padding-top: 0;
+}
+
+mat-form-field {
+  margin-bottom: 8px;
+  
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+}
+
+mat-hint {
+  font-size: 12px;
+  color: #666;
+}
+
+// Action menu styling
+mat-menu {
+  .mat-mdc-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .role-action-management-container {
+    padding: 10px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    
+    .half-width {
+      width: 100%;
+    }
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+  
+  .role-action-table {
+    font-size: 14px;
+  }
+  
+  .action-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .action-key {
+    font-size: 12px;
+  }
+}

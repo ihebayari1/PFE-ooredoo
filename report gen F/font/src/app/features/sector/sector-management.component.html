@@ -1,0 +1,251 @@
+<div class="sector-management-container">
+  <mat-toolbar class="management-toolbar">
+    <button mat-icon-button routerLink="/admin" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>Sector Management</span>
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" (click)="onCreateSector()">
+      <mat-icon>domain</mat-icon>
+      Create Sector
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <!-- Sector List -->
+    <mat-card class="sector-list-card" *ngIf="!showCreateForm && !showEditForm">
+      <mat-card-header>
+        <mat-card-title>Sectors</mat-card-title>
+        <mat-card-subtitle>Manage sectors within zones and their POS</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="loading-container" *ngIf="isLoading">
+          <mat-spinner></mat-spinner>
+          <p>Loading sectors...</p>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+          <table mat-table [dataSource]="sectors" class="sector-table">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Sector Name</th>
+              <td mat-cell *matCellDef="let sector">
+                <div class="sector-info">
+                  <mat-icon class="sector-icon">domain</mat-icon>
+                  <div class="sector-details">
+                    <div class="sector-name">{{ sector.sectorName }}</div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Zone Column -->
+            <ng-container matColumnDef="zone">
+              <th mat-header-cell *matHeaderCellDef>Zone</th>
+              <td mat-cell *matCellDef="let sector">
+                <div class="zone-info">
+                  <mat-icon class="zone-icon">place</mat-icon>
+                  <span>{{ getZoneName(sector) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Head Column -->
+            <ng-container matColumnDef="headOfSector">
+              <th mat-header-cell *matHeaderCellDef>Head of Sector</th>
+              <td mat-cell *matCellDef="let sector">
+                <div class="head-info">
+                  <mat-icon class="head-icon">person</mat-icon>
+                  <span>{{ getHeadName(sector) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- POS Count Column -->
+            <ng-container matColumnDef="posCount">
+              <th mat-header-cell *matHeaderCellDef>POS</th>
+              <td mat-cell *matCellDef="let sector">
+                <mat-chip-set>
+                  <mat-chip>{{ getPOSCount(sector) }} POS</mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="createdDate">
+              <th mat-header-cell *matHeaderCellDef>Created</th>
+              <td mat-cell *matCellDef="let sector">
+                {{ formatDate(sector.creation_Date) }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let sector">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onEditSector(sector)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  <button mat-menu-item (click)="onDeleteSector(sector)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="sectors.length === 0">
+            <mat-icon>domain</mat-icon>
+            <p>No sectors found</p>
+            <button mat-raised-button color="primary" (click)="onCreateSector()">
+              Create First Sector
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sector Details with POS -->
+    <mat-card class="details-card" *ngIf="!showCreateForm && !showEditForm && sectors.length > 0">
+      <mat-card-header>
+        <mat-card-title>Sector Details</mat-card-title>
+        <mat-card-subtitle>View POS and hierarchy for each sector</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <mat-accordion multi="true">
+          <mat-expansion-panel *ngFor="let sector of sectors" (opened)="loadPOSForSector(sector)">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon class="sector-icon">domain</mat-icon>
+                {{ sector.sectorName }}
+              </mat-panel-title>
+              <mat-panel-description>
+                {{ getPOSCount(sector) }} POS • Head: {{ getHeadName(sector) }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            
+            <div class="sector-details-content">
+              <div class="sector-info-section">
+                <h4>Sector Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <mat-icon>place</mat-icon>
+                    <span><strong>Zone:</strong> {{ getZoneName(sector) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>person</mat-icon>
+                    <span><strong>Head:</strong> {{ getHeadName(sector) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span><strong>Created:</strong> {{ formatDate(sector.creation_Date) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>store</mat-icon>
+                    <span><strong>POS:</strong> {{ getPOSCount(sector) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pos-section" *ngIf="sector.posInSector && sector.posInSector.length > 0">
+                <h4>POS in this Sector</h4>
+                <div class="pos-grid">
+                  <mat-card class="pos-card" *ngFor="let pos of sector.posInSector">
+                    <mat-card-content>
+                      <div class="pos-info">
+                        <mat-icon class="pos-icon">store</mat-icon>
+                        <div class="pos-details">
+                          <div class="pos-name">{{ pos.posName }}</div>
+                          <div class="pos-code">
+                            <mat-chip class="code-chip">{{ pos.codeOfPOS }}</mat-chip>
+                          </div>
+                          <div class="pos-head" *ngIf="pos.headOfPOS">
+                            Head: {{ pos.headOfPOS.first_Name }} {{ pos.headOfPOS.last_Name }}
+                          </div>
+                          <div class="pos-users" *ngIf="pos.users">
+                            {{ pos.users.length }} users
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+
+              <div class="no-pos" *ngIf="!sector.posInSector || sector.posInSector.length === 0">
+                <mat-icon>store</mat-icon>
+                <p>No POS assigned to this sector</p>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Create/Edit Form -->
+    <mat-card class="form-card" *ngIf="showCreateForm || showEditForm">
+      <mat-card-header>
+        <mat-card-title>{{ showCreateForm ? 'Create Sector' : 'Edit Sector' }}</mat-card-title>
+        <mat-card-subtitle>{{ showCreateForm ? 'Add a new sector within a zone' : 'Update sector details' }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="sectorForm" (ngSubmit)="onSubmitForm()" class="sector-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Sector Name</mat-label>
+              <input matInput formControlName="sectorName" placeholder="Enter sector name" required>
+              <mat-error *ngIf="sectorForm.get('sectorName')?.hasError('required')">
+                Sector name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Zone</mat-label>
+              <mat-select formControlName="zoneId" required>
+                <mat-option *ngFor="let zone of zones" [value]="zone.id">
+                  {{ zone.zoneName }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="sectorForm.get('zoneId')?.hasError('required')">
+                Zone is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Head of Sector</mat-label>
+              <mat-select formControlName="headOfSectorId">
+                <mat-option [value]="null">No Head</mat-option>
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.first_Name }} {{ user.last_Name }} ({{ user.email }})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="sectorForm.invalid">
+              {{ showCreateForm ? 'Create Sector' : 'Update Sector' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,287 @@
+<div class="user-management-dialog">
+  <!-- Enhanced Header -->
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="main-icon">group</mat-icon>
+        <div class="title-text">
+          <h2>Manage Users</h2>
+          <p class="form-name">"{{ data.formName }}"</p>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-number">{{ getTotalUsers() }}</span>
+          <span class="stat-label">Total Users</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ getAssignedUsers().length }}</span>
+          <span class="stat-label">Assigned</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <mat-dialog-content class="dialog-content">
+    <!-- Enhanced Search Section -->
+    <div class="search-section">
+      <div class="search-controls">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search users</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="searchTerm" 
+            placeholder="Type to search by name, email, or role..."
+            (ngModelChange)="onSearchChange($event)"
+            autocomplete="off">
+          <mat-icon matSuffix>search</mat-icon>
+          <button 
+            *ngIf="searchTerm" 
+            matSuffix 
+            mat-icon-button 
+            (click)="clearSearch()"
+            matTooltip="Clear search">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="role-filter-field">
+          <mat-label>Filter by Role</mat-label>
+          <mat-select 
+            [(ngModel)]="selectedRoleFilter" 
+            (selectionChange)="onRoleFilterChange($event.value)"
+            placeholder="All Roles">
+            <mat-option value="">All Roles ({{ getTotalUsers() }})</mat-option>
+            <mat-option *ngFor="let role of availableRoles" [value]="role.name">
+              {{ role.name }} ({{ getUsersByRoleCount(role.name) }})
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>filter_list</mat-icon>
+          <button 
+            *ngIf="selectedRoleFilter" 
+            matSuffix 
+            mat-icon-button 
+            (click)="clearRoleFilter()"
+            matTooltip="Clear role filter">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+      
+      <!-- Search Results Summary -->
+      <div *ngIf="!isLoading && (searchTerm || selectedRoleFilter)" class="search-summary">
+        <mat-icon>info</mat-icon>
+        <span>
+          Found {{ getTotalFilteredUsers() }} user(s)
+          <span *ngIf="searchTerm">matching "{{ searchTerm }}"</span>
+          <span *ngIf="selectedRoleFilter">with role "{{ selectedRoleFilter }}"</span>
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading users...</p>
+    </div>
+    
+    <div *ngIf="!isLoading" class="tabs-container">
+      <div class="tabs-header">
+        <h3>User Management</h3>
+        <div class="tabs-stats">
+          <span class="tab-stat assignable">
+            <mat-icon>person_add</mat-icon>
+            {{ getAssignableUsers().length }} Available
+          </span>
+          <span class="tab-stat assigned">
+            <mat-icon>person_remove</mat-icon>
+            {{ getAssignedUsers().length }} Assigned
+          </span>
+        </div>
+      </div>
+      <mat-tab-group [(selectedIndex)]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)" class="enhanced-tabs">
+        
+        <!-- Available Users Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>people</mat-icon>
+            Available Users
+            <span *ngIf="getAssignableUsers().length > 0" class="count-badge">{{ getAssignableUsers().length }}</span>
+          </ng-template>
+          
+          <div class="tab-content">
+            <div *ngIf="getAssignableUsers().length === 0" class="no-users">
+              <mat-icon>person_off</mat-icon>
+              <p *ngIf="searchTerm">No users found matching "{{ searchTerm }}"</p>
+              <p *ngIf="!searchTerm">All users are already assigned to this form.</p>
+            </div>
+            
+            <div *ngIf="getAssignableUsers().length > 0" class="users-list">
+              <div class="list-header">
+                <p class="instruction">Select users to assign to this form:</p>
+                <div class="selection-actions">
+                  <button mat-button (click)="selectAllAssignable()" class="select-all-btn">
+                    <mat-icon>check_box</mat-icon>
+                    Select All
+                  </button>
+                  <button 
+                    *ngIf="selectedRoleFilter" 
+                    mat-button 
+                    (click)="selectAllAssignableByRole()" 
+                    class="select-all-role-btn">
+                    <mat-icon>filter_list</mat-icon>
+                    Select All {{ selectedRoleFilter }}
+                  </button>
+                  <button mat-button (click)="deselectAllAssignable()" class="deselect-all-btn">
+                    <mat-icon>check_box_outline_blank</mat-icon>
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div class="users-grid">
+                <div 
+                  *ngFor="let user of getAssignableUsers(); trackBy: trackByUserId" 
+                  class="user-card"
+                  [class.selected]="user.selectedForAssign">
+                  <div class="user-card-header">
+                    <mat-checkbox 
+                      [(ngModel)]="user.selectedForAssign" 
+                      class="user-checkbox"
+                      (change)="onSelectionChange()">
+                    </mat-checkbox>
+                    <div class="user-name">
+                      {{ user.first_Name }} {{ user.last_Name }}
+                      <span *ngIf="user.selectedForAssign" class="selected-indicator">✓</span>
+                    </div>
+                    <button 
+                      mat-icon-button 
+                      (click)="toggleUserAssign(user)"
+                      matTooltip="Toggle selection"
+                      class="toggle-btn">
+                      <mat-icon>{{ user.selectedForAssign ? 'remove_circle' : 'add_circle' }}</mat-icon>
+                    </button>
+                  </div>
+                  <div class="user-card-content">
+                    <div class="user-email">{{ user.email }}</div>
+                    <div class="user-roles">
+                      <span *ngFor="let role of getRoleNames(user.roles)" class="role-badge">{{ role }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        
+        <!-- Assigned Users Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>group</mat-icon>
+            Assigned Users
+            <span *ngIf="getAssignedUsers().length > 0" class="count-badge">{{ getAssignedUsers().length }}</span>
+          </ng-template>
+          
+          <div class="tab-content">
+            <div *ngIf="getAssignedUsers().length === 0" class="no-users">
+              <mat-icon>person_off</mat-icon>
+              <p>No users are currently assigned to this form.</p>
+            </div>
+            
+            <div *ngIf="getAssignedUsers().length > 0" class="users-list">
+              <div class="list-header">
+                <p class="instruction">Select users to unassign from this form:</p>
+                <div class="selection-actions">
+                  <button mat-button (click)="selectAllAssigned()" class="select-all-btn">
+                    <mat-icon>check_box</mat-icon>
+                    Select All
+                  </button>
+                  <button 
+                    *ngIf="selectedRoleFilter" 
+                    mat-button 
+                    (click)="selectAllAssignedByRole()" 
+                    class="select-all-role-btn">
+                    <mat-icon>filter_list</mat-icon>
+                    Select All {{ selectedRoleFilter }}
+                  </button>
+                  <button mat-button (click)="deselectAllAssigned()" class="deselect-all-btn">
+                    <mat-icon>check_box_outline_blank</mat-icon>
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div class="users-grid">
+                <div 
+                  *ngFor="let user of getAssignedUsers(); trackBy: trackByUserId" 
+                  class="user-card"
+                  [class.selected]="user.selectedForUnassign">
+                  <div class="user-card-header">
+                    <mat-checkbox 
+                      [(ngModel)]="user.selectedForUnassign" 
+                      class="user-checkbox"
+                      (change)="onSelectionChange()">
+                    </mat-checkbox>
+                    <div class="user-name">
+                      {{ user.first_Name }} {{ user.last_Name }}
+                      <span *ngIf="user.selectedForUnassign" class="selected-indicator">✓</span>
+                    </div>
+                    <button 
+                      mat-icon-button 
+                      (click)="toggleUserUnassign(user)"
+                      matTooltip="Toggle selection"
+                      class="toggle-btn">
+                      <mat-icon>{{ user.selectedForUnassign ? 'remove_circle' : 'add_circle' }}</mat-icon>
+                    </button>
+                  </div>
+                  <div class="user-card-content">
+                    <div class="user-email">{{ user.email }}</div>
+                    <div class="user-roles">
+                      <span *ngFor="let role of getRoleNames(user.roles)" class="role-badge">{{ role }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        
+      </mat-tab-group>
+    </div>
+  </mat-dialog-content>
+  
+  <!-- Enhanced Dialog Actions -->
+  <div class="dialog-actions">
+    <div class="action-summary">
+      <div *ngIf="hasSelectedUsersForAssign()" class="summary-item assign">
+        <mat-icon>add_circle</mat-icon>
+        <span>{{ getSelectedAssignableCount() }} user(s) ready to assign</span>
+      </div>
+      <div *ngIf="hasSelectedUsersForUnassign()" class="summary-item unassign">
+        <mat-icon>remove_circle</mat-icon>
+        <span>{{ getSelectedAssignedCount() }} user(s) ready to remove</span>
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button mat-button (click)="onCancel()" [disabled]="isProcessing" class="cancel-btn">
+        <mat-icon>close</mat-icon>
+        Cancel
+      </button>
+      <button 
+        mat-raised-button 
+        (click)="onAssign()" 
+        [disabled]="!hasSelectedUsersForAssign() || isProcessing"
+        class="assign-btn">
+        <mat-icon *ngIf="isProcessing">hourglass_empty</mat-icon>
+        <mat-icon *ngIf="!isProcessing">add_circle</mat-icon>
+        {{ isProcessing ? 'Assigning...' : 'Assign to Form' }}
+      </button>
+      <button 
+        mat-raised-button 
+        (click)="onUnassign()" 
+        [disabled]="!hasSelectedUsersForUnassign() || isProcessing"
+        class="unassign-btn">
+        <mat-icon *ngIf="isProcessing">hourglass_empty</mat-icon>
+        <mat-icon *ngIf="!isProcessing">remove_circle</mat-icon>
+        {{ isProcessing ? 'Unassigning...' : 'Remove from Form' }}
+      </button>
+    </div>
+  </div>
+</div>

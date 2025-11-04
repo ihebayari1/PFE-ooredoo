@@ -1,0 +1,405 @@
+<div class="form-submission-container">
+  <!-- Loading indicator -->
+  <app-loading-spinner 
+    *ngIf="loading" 
+    [overlay]="true" 
+    message="Loading form...">
+  </app-loading-spinner>
+
+  <!-- Enhanced Form Header -->
+  <div class="form-header" *ngIf="formComponents.length > 0">
+    <div class="header-content">
+      <div class="form-icon">
+        <mat-icon>description</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>{{ formData?.name }}</h1>
+        <p class="form-description">{{ formData?.description }}</p>
+        <div class="form-meta">
+          <span class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            <span>Estimated time: {{ getEstimatedTime() }} minutes</span>
+          </span>
+          <span class="meta-item">
+            <mat-icon>assignment</mat-icon>
+            <span>{{ formComponents.length }} field{{ formComponents.length !== 1 ? 's' : '' }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Form Content -->
+  <div class="form-content" *ngIf="formComponents.length > 0">
+    <mat-card class="form-card">
+      <mat-card-header class="form-card-header">
+        <mat-card-title>
+          <mat-icon class="card-icon">edit</mat-icon>
+          Form Submission
+        </mat-card-title>
+        <mat-card-subtitle>Please fill out all required fields</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content class="form-card-content">
+        <form [formGroup]="submissionForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Progress Indicator -->
+          <div class="form-progress" *ngIf="formComponents.length > 3">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getFormProgress()"></div>
+            </div>
+            <span class="progress-text">{{ getFormProgress() }}% Complete</span>
+          </div>
+
+          <!-- Render form components -->
+          <ng-container *ngFor="let component of formComponents; let i = index; trackBy: trackByAssignmentId">
+            
+            <!-- Regular Form Fields -->
+            <div 
+              *ngIf="getComponentType(component) !== 'FILE_UPLOAD'"
+              class="form-component"
+              [class.required-field]="component.required"
+              [class.completed-field]="isFieldCompleted(component)">
+              
+              <!-- Component Header -->
+              <div class="component-header">
+                <div class="component-title">
+                  <mat-icon class="component-icon">{{ getComponentIcon(component.componentType) }}</mat-icon>
+                  <span class="component-label">{{ component.label }}</span>
+                  <span *ngIf="component.required" class="required-indicator">*</span>
+                </div>
+                <div class="component-help" *ngIf="getPropertyValue(component, 'helpText')">
+                  <mat-icon class="help-icon">help_outline</mat-icon>
+                  <span class="help-text">{{ getPropertyValue(component, 'helpText') }}</span>
+                </div>
+              </div>
+
+            <!-- Text Field -->
+            <mat-form-field 
+              *ngIf="component.componentType === 'TEXT' || component.componentType === 'text'" 
+              appearance="outline" 
+              class="enhanced-input full-width">
+              <mat-label>{{ component.label }}</mat-label>
+              <input 
+                matInput 
+                [formControlName]="'field_' + component.assignmentId"
+                [placeholder]="getPropertyValue(component, 'placeholder')"
+                [maxlength]="getPropertyValue(component, 'maxLength')">
+              <mat-icon matPrefix class="input-icon">text_fields</mat-icon>
+              <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                {{ getPropertyValue(component, 'helpText') }}
+              </mat-hint>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                <mat-icon class="error-icon">error</mat-icon>
+                This field is required
+              </mat-error>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('maxlength')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Maximum length exceeded
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Email Field -->
+            <mat-form-field 
+              *ngIf="component.componentType === 'EMAIL' || component.componentType === 'email'" 
+              appearance="outline" 
+              class="enhanced-input full-width">
+              <mat-label>{{ component.label }}</mat-label>
+              <input 
+                matInput 
+                type="email"
+                [formControlName]="'field_' + component.assignmentId"
+                [placeholder]="getPropertyValue(component, 'placeholder')">
+              <mat-icon matPrefix class="input-icon">email</mat-icon>
+              <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                {{ getPropertyValue(component, 'helpText') }}
+              </mat-hint>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                <mat-icon class="error-icon">error</mat-icon>
+                This field is required
+              </mat-error>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('email')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Please enter a valid email address
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Number Field -->
+            <mat-form-field 
+              *ngIf="component.componentType === 'NUMBER' || component.componentType === 'number'" 
+              appearance="outline" 
+              class="enhanced-input full-width">
+              <mat-label>{{ component.label }}</mat-label>
+              <input 
+                matInput 
+                type="number"
+                [formControlName]="'field_' + component.assignmentId"
+                [placeholder]="getPropertyValue(component, 'placeholder')"
+                [min]="getPropertyValue(component, 'min')"
+                [max]="getPropertyValue(component, 'max')">
+              <mat-icon matPrefix class="input-icon">numbers</mat-icon>
+              <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                {{ getPropertyValue(component, 'helpText') }}
+              </mat-hint>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                <mat-icon class="error-icon">error</mat-icon>
+                This field is required
+              </mat-error>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('min')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Value must be at least {{ getPropertyValue(component, 'min') }}
+              </mat-error>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('max')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Value must be at most {{ getPropertyValue(component, 'max') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Textarea Field -->
+            <mat-form-field 
+              *ngIf="component.componentType === 'TEXTAREA' || component.componentType === 'textarea'" 
+              appearance="outline" 
+              class="enhanced-input full-width">
+              <mat-label>{{ component.label }}</mat-label>
+              <textarea 
+                matInput 
+                [formControlName]="'field_' + component.assignmentId"
+                [placeholder]="getPropertyValue(component, 'placeholder')"
+                [rows]="getPropertyValue(component, 'rows') || 4"
+                [maxlength]="getPropertyValue(component, 'maxLength')">
+              </textarea>
+              <mat-icon matPrefix class="input-icon">notes</mat-icon>
+              <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                {{ getPropertyValue(component, 'helpText') }}
+              </mat-hint>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                <mat-icon class="error-icon">error</mat-icon>
+                This field is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Dropdown Field -->
+            <mat-form-field 
+              *ngIf="component.componentType === 'DROPDOWN' || component.componentType === 'dropdown'" 
+              appearance="outline" 
+              class="enhanced-input full-width">
+              <mat-label>{{ component.label }}</mat-label>
+              <mat-select [formControlName]="'field_' + component.assignmentId" placeholder="Select an option">
+                <mat-option [value]="null">{{ getPropertyValue(component, 'placeholder') || 'Select an option' }}</mat-option>
+                <mat-option 
+                  *ngFor="let option of component.options" 
+                  [value]="option.value">
+                  {{ option.label }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix class="input-icon">arrow_drop_down</mat-icon>
+              <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                {{ getPropertyValue(component, 'helpText') }}
+              </mat-hint>
+              <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                <mat-icon class="error-icon">error</mat-icon>
+                This field is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Radio Buttons Field -->
+            <div 
+              *ngIf="component.componentType === 'RADIO' || component.componentType === 'radio'" 
+              class="radio-group-field">
+              <div class="radio-group-container">
+                <mat-radio-group 
+                  [formControlName]="'field_' + component.assignmentId"
+                  [class]="getPropertyValue(component, 'layout') === 'horizontal' ? 'horizontal-layout' : 'vertical-layout'">
+                  <mat-radio-button 
+                    *ngFor="let option of component.options" 
+                    [value]="option.value"
+                    class="enhanced-radio">
+                    {{ option.label }}
+                  </mat-radio-button>
+                </mat-radio-group>
+              </div>
+            </div>
+
+            <!-- Checkbox Field -->
+            <div 
+              *ngIf="component.componentType === 'CHECKBOX' || component.componentType === 'checkbox'" 
+              class="checkbox-group-field">
+              <div class="checkbox-group-container">
+                <div 
+                  [formGroup]="getCheckboxGroup(component)"
+                  [class]="getPropertyValue(component, 'layout') === 'horizontal' ? 'horizontal-layout' : 'vertical-layout'">
+                  <mat-checkbox 
+                    *ngFor="let option of component.options" 
+                    [formControlName]="option.value"
+                    class="enhanced-checkbox">
+                    {{ option.label }}
+                  </mat-checkbox>
+                </div>
+              </div>
+              <mat-error *ngIf="getCheckboxGroup(component).hasError('minSelections')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Please select at least {{ getPropertyValue(component, 'minSelections') }} options
+              </mat-error>
+              <mat-error *ngIf="getCheckboxGroup(component).hasError('maxSelections')">
+                <mat-icon class="error-icon">error</mat-icon>
+                Please select at most {{ getPropertyValue(component, 'maxSelections') }} options
+              </mat-error>
+            </div>
+
+            <!-- Date Field -->
+            <div class="date-picker-wrapper">
+              <mat-form-field 
+                *ngIf="component.componentType === 'DATE' || component.componentType === 'date'" 
+                appearance="outline" 
+                class="enhanced-input full-width date-picker-field">
+                <mat-label>{{ component.label }}</mat-label>
+                <input 
+                  matInput 
+                  [matDatepicker]="picker"
+                  [formControlName]="'field_' + component.assignmentId"
+                  [placeholder]="getPropertyValue(component, 'placeholder')">
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <mat-icon matPrefix class="input-icon">calendar_today</mat-icon>
+                <mat-hint *ngIf="getPropertyValue(component, 'helpText')">
+                  {{ getPropertyValue(component, 'helpText') }}
+                </mat-hint>
+                <mat-error *ngIf="submissionForm.get('field_' + component.assignmentId)?.hasError('required')">
+                  <mat-icon class="error-icon">error</mat-icon>
+                  This field is required
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Field Completion Indicator -->
+              <div class="field-completion date-completion-indicator" *ngIf="isFieldCompleted(component)">
+                <mat-icon class="completion-icon">check_circle</mat-icon>
+                <span class="completion-text">Completed</span>
+              </div>
+            </div>
+            </div>
+
+            <!-- File Upload Component -->
+            <div 
+              *ngIf="getComponentType(component) === 'FILE_UPLOAD'"
+              class="form-component file-upload-component"
+              [class.required-field]="component.required"
+              [class.completed-field]="isFieldCompleted(component)">
+              
+              <!-- Component Header -->
+              <div class="component-header">
+                <div class="component-title">
+                  <mat-icon class="component-icon">attach_file</mat-icon>
+                  <span class="component-label">{{ component.label }}</span>
+                  <span *ngIf="component.required" class="required-indicator">*</span>
+                </div>
+                <div class="component-help" *ngIf="getPropertyValue(component, 'helpText')">
+                  <mat-icon class="help-icon">help_outline</mat-icon>
+                  <span class="help-text">{{ getPropertyValue(component, 'helpText') }}</span>
+                </div>
+              </div>
+
+              <!-- File Upload Area -->
+              <div class="file-upload-area">
+                <input 
+                  type="file" 
+                  #fileInput
+                  [id]="'file_' + component.assignmentId"
+                  [accept]="getPropertyValue(component, 'allowedFileTypes')"
+                  (change)="onFileSelected($event, component.assignmentId)"
+                  style="display: none"
+                  [multiple]="getPropertyValue(component, 'maxFiles') !== '1'">
+                
+                <button 
+                  type="button"
+                  mat-stroked-button 
+                  color="primary"
+                  (click)="fileInput.click()"
+                  class="upload-btn">
+                  <mat-icon>cloud_upload</mat-icon>
+                  Choose File
+                </button>
+                
+                <div class="file-info" *ngIf="getPropertyValue(component, 'maxFileSize')">
+                  <span class="file-hint">Max size: {{ getPropertyValue(component, 'maxFileSize') }}</span>
+                </div>
+              </div>
+
+              <!-- Uploaded Files List -->
+              <div class="uploaded-files" *ngIf="getUploadedFiles(component.assignmentId).length > 0">
+                <div 
+                  *ngFor="let file of getUploadedFiles(component.assignmentId)" 
+                  class="uploaded-file-item">
+                  <mat-icon class="file-icon">description</mat-icon>
+                  <span class="file-name">{{ file.originalFileName }}</span>
+                  <span class="file-size">{{ formatFileSize(file.fileSize) }}</span>
+                  <button 
+                    mat-icon-button 
+                    color="warn" 
+                    (click)="removeFile(component.assignmentId, file.id)"
+                    class="remove-file-btn">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Field Completion Indicator -->
+              <div class="field-completion" *ngIf="isFieldCompleted(component)">
+                <mat-icon class="completion-icon">check_circle</mat-icon>
+                <span class="completion-text">Completed</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Enhanced Submit Section -->
+          <div class="form-actions">
+            <div class="actions-info">
+              <div class="form-summary">
+                <mat-icon class="summary-icon">info</mat-icon>
+                <span>{{ getCompletedFieldsCount() }} of {{ getFieldCount() }} fields completed</span>
+              </div>
+            </div>
+            <div class="actions-buttons">
+              <button 
+                type="button" 
+                mat-button 
+                (click)="goBack()"
+                class="cancel-btn">
+                <mat-icon>arrow_back</mat-icon>
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                mat-raised-button 
+                color="primary"
+                [disabled]="submissionForm.invalid || submitting"
+                class="submit-btn">
+                <mat-icon *ngIf="submitting">hourglass_empty</mat-icon>
+                <mat-icon *ngIf="!submitting">send</mat-icon>
+                {{ submitting ? 'Submitting...' : 'Submit Form' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Enhanced No Form Found -->
+  <div *ngIf="!loading && formComponents.length === 0" class="no-form-container">
+    <mat-card class="no-form-card">
+      <mat-card-content class="no-form-content">
+        <div class="no-form-icon">
+          <mat-icon>error_outline</mat-icon>
+        </div>
+        <h2>Form Not Found</h2>
+        <p>The requested form could not be found or you don't have permission to access it.</p>
+        <div class="no-form-actions">
+          <button mat-raised-button color="primary" (click)="goBack()" class="back-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Go Back
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

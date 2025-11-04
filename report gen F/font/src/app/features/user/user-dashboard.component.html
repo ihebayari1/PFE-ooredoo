@@ -1,0 +1,694 @@
+<div class="dashboard-container">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="welcome-section">
+          <div class="welcome-icon-wrapper">
+            <mat-icon class="welcome-icon" [ngSwitch]="userRole">
+              <span *ngSwitchCase="'MAIN_ADMIN'">admin_panel_settings</span>
+              <span *ngSwitchCase="'ENTERPRISE_ADMIN'">business</span>
+              <span *ngSwitchCase="'HEAD_OF_REGION'">location_on</span>
+              <span *ngSwitchCase="'HEAD_OF_ZONE'">place</span>
+              <span *ngSwitchCase="'HEAD_OF_SECTOR'">domain</span>
+              <span *ngSwitchCase="'HEAD_OF_POS'">store</span>
+              <span *ngSwitchDefault>person</span>
+            </mat-icon>
+          </div>
+          <div class="welcome-text">
+            <h1>Welcome back, {{ user?.email }}</h1>
+            <p class="role-badge">{{ getRoleDisplayName() }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    
+    <!-- Stats Section - Visible for all roles -->
+    <div class="stats-section" *ngIf="!isLoadingStats">
+      <div class="stats-grid">
+        <!-- MAIN_ADMIN Stats -->
+        <ng-container *ngIf="isMainAdmin()">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.users || 0 }}</div>
+              <div class="stat-label">Users</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.users || 0 }}</div>
+              <div class="stat-label">Users</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>location_on</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.regions || 0 }}</div>
+              <div class="stat-label">Regions</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.forms || 0 }}</div>
+              <div class="stat-label">Forms</div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ENTERPRISE_ADMIN Stats -->
+        <ng-container *ngIf="isEnterpriseAdmin() && dashboardStats.enterprise">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>business</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ dashboardStats.enterprise.enterpriseName }}</div>
+              <div class="stat-label">Enterprise</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.users || 0 }}</div>
+              <div class="stat-label">Users</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ dashboardStats.forms || 0 }}</div>
+              <div class="stat-label">Forms</div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- HEAD_OF_* Roles Stats -->
+        <ng-container *ngIf="isHeadRole()">
+          <div class="stat-card stat-primary" *ngIf="hierarchyData">
+            <div class="stat-icon-wrapper">
+              <mat-icon [ngSwitch]="userRole">
+                <span *ngSwitchCase="'HEAD_OF_REGION'">location_on</span>
+                <span *ngSwitchCase="'HEAD_OF_ZONE'">place</span>
+                <span *ngSwitchCase="'HEAD_OF_SECTOR'">domain</span>
+                <span *ngSwitchCase="'HEAD_OF_POS'">store</span>
+              </mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" *ngIf="hierarchyData.region">{{ hierarchyData.region.regionName }}</div>
+              <div class="stat-value" *ngIf="hierarchyData.zone">{{ hierarchyData.zone.zoneName }}</div>
+              <div class="stat-value" *ngIf="hierarchyData.sector">{{ hierarchyData.sector.sectorName }}</div>
+              <div class="stat-value" *ngIf="hierarchyData.pos">{{ hierarchyData.pos.posName }}</div>
+              <div class="stat-label">My Assignment</div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- SIMPLE_USER Stats -->
+        <ng-container *ngIf="isSimpleUserRole()">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>assignment_turned_in</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ assignedForms.length }}</div>
+              <div class="stat-label">Assigned Forms</div>
+            </div>
+          </div>
+          <div class="stat-card stat-primary">
+            <div class="stat-icon-wrapper">
+              <mat-icon>history</mat-icon>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ mySubmissions.length }}</div>
+              <div class="stat-label">My Submissions</div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="stats-loading" *ngIf="isLoadingStats">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading statistics...</p>
+    </div>
+
+    <!-- Content Tabs for different roles -->
+    <mat-tab-group class="dashboard-tabs" *ngIf="!isLoadingStats">
+      
+      <!-- Forms Tab - All Roles -->
+      <mat-tab label="My Forms">
+        <div class="tab-content">
+          <div class="assigned-forms-section">
+            <div class="forms-grid" *ngIf="!isLoadingAssignedForms && assignedForms.length > 0">
+              <mat-card class="form-card" *ngFor="let form of assignedForms">
+                <mat-card-header>
+                  <mat-card-title>{{ form.name }}</mat-card-title>
+                  <mat-card-subtitle>{{ form.description }}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="form-meta">
+                    <span class="form-date" *ngIf="form.createdAt">
+                      <mat-icon>schedule</mat-icon>
+                      {{ form.createdAt | date:'short' }}
+                    </span>
+                    <span class="form-components" *ngIf="form.components">
+                      <mat-icon>widgets</mat-icon>
+                      {{ form.components.length }} fields
+                    </span>
+                  </div>
+                </mat-card-content>
+                <mat-card-actions>
+                  <button mat-raised-button color="primary" (click)="navigateToFormSubmission(form.id)">
+                    <mat-icon>edit</mat-icon>
+                    Fill Form
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+
+            <div class="loading-state" *ngIf="isLoadingAssignedForms">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Loading assigned forms...</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!isLoadingAssignedForms && assignedForms.length === 0">
+              <mat-icon>assignment_turned_in</mat-icon>
+              <h3>No Assigned Forms</h3>
+              <p>You don't have any forms assigned to you at the moment.</p>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Hierarchy Tab - For HEAD_OF_* and ENTERPRISE_ADMIN -->
+      <mat-tab label="Organizational Hierarchy" *ngIf="isHeadRole() || isEnterpriseAdmin()">
+        <div class="tab-content hierarchy-content">
+          <div class="hierarchy-section" *ngIf="isLoadingHierarchy">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Loading hierarchy data...</p>
+          </div>
+
+          <!-- HEAD_OF_REGION Hierarchy -->
+          <ng-container *ngIf="userRole === 'HEAD_OF_REGION' && hierarchyData">
+            <mat-card class="hierarchy-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>location_on</mat-icon>
+                  {{ hierarchyData.region?.regionName }}
+                </mat-card-title>
+                <mat-card-subtitle *ngIf="hierarchyData.region?.headOfRegion">
+                  Head: {{ hierarchyData.region.headOfRegion.first_Name }} {{ hierarchyData.region.headOfRegion.last_Name }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="hierarchy-summary" *ngIf="hierarchyData.zones">
+                  <div class="summary-stats">
+                    <div class="stat-badge">
+                      <mat-icon>place</mat-icon>
+                      <span>{{ hierarchyData.zones.length }} Zones</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.zones[0]?.sectorsCount !== undefined">
+                      <mat-icon>domain</mat-icon>
+                      <span>{{ getTotalSectorsCount() }} Sectors</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.zones[0]?.totalPOSCount !== undefined">
+                      <mat-icon>store</mat-icon>
+                      <span>{{ getTotalPOSCount() }} POS</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.zones[0]?.totalUsersCount !== undefined">
+                      <mat-icon>people</mat-icon>
+                      <span>{{ getTotalUsersCount() }} Users</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <mat-expansion-panel *ngIf="hierarchyData.zones && hierarchyData.zones.length > 0" expanded="true">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      Zones ({{ hierarchyData.zones.length }})
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <div class="hierarchy-tree">
+                    <div class="zone-item" *ngFor="let zone of hierarchyData.zones">
+                      <mat-expansion-panel class="zone-panel">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            <div class="entity-header">
+                              <mat-icon>place</mat-icon>
+                              <div class="entity-info">
+                                <span class="entity-name">{{ zone.zoneName }}</span>
+                                <span class="entity-head" *ngIf="zone.headOfZone">
+                                  Head: {{ zone.headOfZone.first_Name }} {{ zone.headOfZone.last_Name }}
+                                </span>
+                              </div>
+                            </div>
+                          </mat-panel-title>
+                          <mat-panel-description>
+                            <span class="entity-counts">
+                              <mat-chip>{{ zone.sectorsCount || 0 }} Sectors</mat-chip>
+                              <mat-chip>{{ zone.totalPOSCount || 0 }} POS</mat-chip>
+                              <mat-chip>{{ zone.totalUsersCount || 0 }} Users</mat-chip>
+                            </span>
+                          </mat-panel-description>
+                        </mat-expansion-panel-header>
+                        
+                        <!-- Sectors under Zone -->
+                        <div class="sectors-list" *ngIf="zone.sectors && zone.sectors.length > 0">
+                          <div class="sector-item" *ngFor="let sector of zone.sectors">
+                            <mat-expansion-panel class="sector-panel">
+                              <mat-expansion-panel-header>
+                                <mat-panel-title>
+                                  <div class="entity-header">
+                                    <mat-icon>domain</mat-icon>
+                                    <div class="entity-info">
+                                      <span class="entity-name">{{ sector.sectorName }}</span>
+                                      <span class="entity-head" *ngIf="sector.headOfSector">
+                                        Head: {{ sector.headOfSector.first_Name }} {{ sector.headOfSector.last_Name }}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </mat-panel-title>
+                                <mat-panel-description>
+                                  <span class="entity-counts">
+                                    <mat-chip>{{ sector.posCount || 0 }} POS</mat-chip>
+                                    <mat-chip>{{ sector.usersCount || 0 }} Users</mat-chip>
+                                  </span>
+                                </mat-panel-description>
+                              </mat-expansion-panel-header>
+                              
+                              <!-- POS under Sector -->
+                              <div class="pos-list" *ngIf="sector.pos && sector.pos.length > 0">
+                                <div class="pos-item" *ngFor="let pos of sector.pos">
+                                  <mat-expansion-panel class="pos-panel">
+                                    <mat-expansion-panel-header>
+                                      <mat-panel-title>
+                                        <div class="entity-header">
+                                          <mat-icon>store</mat-icon>
+                                          <div class="entity-info">
+                                            <span class="entity-name">{{ pos.posName }}</span>
+                                            <span class="entity-code">Code: {{ pos.codeOfPOS }}</span>
+                                            <span class="entity-head" *ngIf="pos.headOfPOS">
+                                              Head: {{ pos.headOfPOS.first_Name }} {{ pos.headOfPOS.last_Name }}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </mat-panel-title>
+                                      <mat-panel-description>
+                                        <mat-chip>{{ pos.usersCount || 0 }} Users</mat-chip>
+                                      </mat-panel-description>
+                                    </mat-expansion-panel-header>
+                                    
+                                    <!-- Users under POS -->
+                                    <div class="users-list" *ngIf="pos.users && pos.users.length > 0">
+                                      <div class="user-item" *ngFor="let user of pos.users">
+                                        <mat-icon>person</mat-icon>
+                                        <div class="user-info">
+                                          <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                                          <span class="user-email">{{ user.email }}</span>
+                                          <span class="user-role" *ngIf="user.role">{{ user.role.name }}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="empty-nested" *ngIf="!pos.users || pos.users.length === 0">
+                                      <mat-icon>info</mat-icon>
+                                      <span>No users in this POS</span>
+                                    </div>
+                                  </mat-expansion-panel>
+                                </div>
+                              </div>
+                              <div class="empty-nested" *ngIf="!sector.pos || sector.pos.length === 0">
+                                <mat-icon>info</mat-icon>
+                                <span>No POS in this sector</span>
+                              </div>
+                            </mat-expansion-panel>
+                          </div>
+                        </div>
+                        <div class="empty-nested" *ngIf="!zone.sectors || zone.sectors.length === 0">
+                          <mat-icon>info</mat-icon>
+                          <span>No sectors in this zone</span>
+                        </div>
+                      </mat-expansion-panel>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+                <div class="empty-nested" *ngIf="!hierarchyData.zones || hierarchyData.zones.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No zones in this region</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-container>
+
+          <!-- HEAD_OF_ZONE Hierarchy -->
+          <ng-container *ngIf="userRole === 'HEAD_OF_ZONE' && hierarchyData">
+            <mat-card class="hierarchy-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>place</mat-icon>
+                  {{ hierarchyData.zone?.zoneName }}
+                </mat-card-title>
+                <mat-card-subtitle *ngIf="hierarchyData.zone?.headOfZone">
+                  Head: {{ hierarchyData.zone.headOfZone.first_Name }} {{ hierarchyData.zone.headOfZone.last_Name }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="hierarchy-summary" *ngIf="hierarchyData.sectors">
+                  <div class="summary-stats">
+                    <div class="stat-badge">
+                      <mat-icon>domain</mat-icon>
+                      <span>{{ hierarchyData.sectors.length }} Sectors</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.sectors[0]?.posCount !== undefined">
+                      <mat-icon>store</mat-icon>
+                      <span>{{ getZoneTotalPOSCount() }} POS</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.sectors[0]?.totalUsersCount !== undefined">
+                      <mat-icon>people</mat-icon>
+                      <span>{{ getZoneTotalUsersCount() }} Users</span>
+                    </div>
+                  </div>
+                </div>
+
+                <mat-expansion-panel *ngIf="hierarchyData.sectors && hierarchyData.sectors.length > 0" expanded="true">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      Sectors ({{ hierarchyData.sectors.length }})
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <div class="hierarchy-tree">
+                    <div class="sector-item" *ngFor="let sector of hierarchyData.sectors">
+                      <mat-expansion-panel class="sector-panel">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            <div class="entity-header">
+                              <mat-icon>domain</mat-icon>
+                              <div class="entity-info">
+                                <span class="entity-name">{{ sector.sectorName }}</span>
+                                <span class="entity-head" *ngIf="sector.headOfSector">
+                                  Head: {{ sector.headOfSector.first_Name }} {{ sector.headOfSector.last_Name }}
+                                </span>
+                              </div>
+                            </div>
+                          </mat-panel-title>
+                          <mat-panel-description>
+                            <span class="entity-counts">
+                              <mat-chip>{{ sector.posCount || 0 }} POS</mat-chip>
+                              <mat-chip>{{ sector.totalUsersCount || 0 }} Users</mat-chip>
+                            </span>
+                          </mat-panel-description>
+                        </mat-expansion-panel-header>
+                        
+                        <!-- POS under Sector -->
+                        <div class="pos-list" *ngIf="sector.pos && sector.pos.length > 0">
+                          <div class="pos-item" *ngFor="let pos of sector.pos">
+                            <mat-expansion-panel class="pos-panel">
+                              <mat-expansion-panel-header>
+                                <mat-panel-title>
+                                  <div class="entity-header">
+                                    <mat-icon>store</mat-icon>
+                                    <div class="entity-info">
+                                      <span class="entity-name">{{ pos.posName }}</span>
+                                      <span class="entity-code">Code: {{ pos.codeOfPOS }}</span>
+                                      <span class="entity-head" *ngIf="pos.headOfPOS">
+                                        Head: {{ pos.headOfPOS.first_Name }} {{ pos.headOfPOS.last_Name }}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </mat-panel-title>
+                                <mat-panel-description>
+                                  <mat-chip>{{ pos.usersCount || 0 }} Users</mat-chip>
+                                </mat-panel-description>
+                              </mat-expansion-panel-header>
+                              
+                              <!-- Users under POS -->
+                              <div class="users-list" *ngIf="pos.users && pos.users.length > 0">
+                                <div class="user-item" *ngFor="let user of pos.users">
+                                  <mat-icon>person</mat-icon>
+                                  <div class="user-info">
+                                    <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                                    <span class="user-email">{{ user.email }}</span>
+                                    <span class="user-role" *ngIf="user.role">{{ user.role.name }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="empty-nested" *ngIf="!pos.users || pos.users.length === 0">
+                                <mat-icon>info</mat-icon>
+                                <span>No users in this POS</span>
+                              </div>
+                            </mat-expansion-panel>
+                          </div>
+                        </div>
+                        <div class="empty-nested" *ngIf="!sector.pos || sector.pos.length === 0">
+                          <mat-icon>info</mat-icon>
+                          <span>No POS in this sector</span>
+                        </div>
+                      </mat-expansion-panel>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+                <div class="empty-nested" *ngIf="!hierarchyData.sectors || hierarchyData.sectors.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No sectors in this zone</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-container>
+
+          <!-- HEAD_OF_SECTOR Hierarchy -->
+          <ng-container *ngIf="userRole === 'HEAD_OF_SECTOR' && hierarchyData">
+            <mat-card class="hierarchy-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>domain</mat-icon>
+                  {{ hierarchyData.sector?.sectorName }}
+                </mat-card-title>
+                <mat-card-subtitle *ngIf="hierarchyData.sector?.headOfSector">
+                  Head: {{ hierarchyData.sector.headOfSector.first_Name }} {{ hierarchyData.sector.headOfSector.last_Name }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="hierarchy-summary" *ngIf="hierarchyData.pos">
+                  <div class="summary-stats">
+                    <div class="stat-badge">
+                      <mat-icon>store</mat-icon>
+                      <span>{{ hierarchyData.pos.length }} POS</span>
+                    </div>
+                    <div class="stat-badge" *ngIf="hierarchyData.totalUsersCount !== undefined">
+                      <mat-icon>people</mat-icon>
+                      <span>{{ hierarchyData.totalUsersCount || 0 }} Users</span>
+                    </div>
+                  </div>
+                </div>
+
+                <mat-expansion-panel *ngIf="hierarchyData.pos && hierarchyData.pos.length > 0" expanded="true">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      POS ({{ hierarchyData.pos.length }})
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <div class="hierarchy-tree">
+                    <div class="pos-item" *ngFor="let pos of hierarchyData.pos">
+                      <mat-expansion-panel class="pos-panel">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            <div class="entity-header">
+                              <mat-icon>store</mat-icon>
+                              <div class="entity-info">
+                                <span class="entity-name">{{ pos.posName }}</span>
+                                <span class="entity-code">Code: {{ pos.codeOfPOS }}</span>
+                                <span class="entity-head" *ngIf="pos.headOfPOS">
+                                  Head: {{ pos.headOfPOS.first_Name }} {{ pos.headOfPOS.last_Name }}
+                                </span>
+                              </div>
+                            </div>
+                          </mat-panel-title>
+                          <mat-panel-description>
+                            <mat-chip>{{ pos.usersCount || 0 }} Users</mat-chip>
+                          </mat-panel-description>
+                        </mat-expansion-panel-header>
+                        
+                        <!-- Users under POS -->
+                        <div class="users-list" *ngIf="pos.users && pos.users.length > 0">
+                          <div class="user-item" *ngFor="let user of pos.users">
+                            <mat-icon>person</mat-icon>
+                            <div class="user-info">
+                              <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                              <span class="user-email">{{ user.email }}</span>
+                              <span class="user-role" *ngIf="user.role">{{ user.role.name }}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="empty-nested" *ngIf="!pos.users || pos.users.length === 0">
+                          <mat-icon>info</mat-icon>
+                          <span>No users in this POS</span>
+                        </div>
+                      </mat-expansion-panel>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+                <div class="empty-nested" *ngIf="!hierarchyData.pos || hierarchyData.pos.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No POS in this sector</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-container>
+
+          <!-- HEAD_OF_POS Hierarchy -->
+          <ng-container *ngIf="userRole === 'HEAD_OF_POS' && hierarchyData">
+            <mat-card class="hierarchy-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>store</mat-icon>
+                  {{ hierarchyData.pos?.posName }}
+                </mat-card-title>
+                <mat-card-subtitle>
+                  Code: {{ hierarchyData.pos?.codeOfPOS }}
+                  <span *ngIf="hierarchyData.pos?.headOfPOS" style="margin-left: 1rem;">
+                    Head: {{ hierarchyData.pos.headOfPOS.first_Name }} {{ hierarchyData.pos.headOfPOS.last_Name }}
+                  </span>
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="hierarchy-summary" *ngIf="hierarchyData.users">
+                  <div class="summary-stats">
+                    <div class="stat-badge">
+                      <mat-icon>people</mat-icon>
+                      <span>{{ hierarchyData.users.length || 0 }} Users</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hierarchy-tree" *ngIf="hierarchyData.users && hierarchyData.users.length > 0">
+                  <h4 class="section-title">Users in this POS</h4>
+                  <div class="users-list">
+                    <div class="user-item" *ngFor="let user of hierarchyData.users">
+                      <mat-icon>person</mat-icon>
+                      <div class="user-info">
+                        <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                        <span class="user-email">{{ user.email }}</span>
+                        <span class="user-role" *ngIf="user.role">
+                          Role: {{ user.role.name }}
+                        </span>
+                        <span class="user-type" *ngIf="user.userType">
+                          Type: {{ user.userType }}
+                        </span>
+                      </div>
+                      <div class="user-status">
+                        <mat-chip *ngIf="user.enabled" class="status-enabled">Active</mat-chip>
+                        <mat-chip *ngIf="!user.enabled" class="status-disabled">Inactive</mat-chip>
+                        <mat-chip *ngIf="user.accountLocked" class="status-locked">Locked</mat-chip>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="empty-nested" *ngIf="!hierarchyData.users || hierarchyData.users.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No users in this POS</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-container>
+
+          <!-- ENTERPRISE_ADMIN Hierarchy -->
+          <ng-container *ngIf="isEnterpriseAdmin() && dashboardStats.enterprise">
+            <mat-card class="hierarchy-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>business</mat-icon>
+                  {{ dashboardStats.enterprise.enterpriseName }}
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <p>You can manage all regions, zones, sectors, POS, and users within this enterprise.</p>
+                <div class="action-buttons">
+                  <button mat-raised-button color="primary" routerLink="/management/regions">
+                    <mat-icon>location_on</mat-icon>
+                    Manage Regions
+                  </button>
+                  <button mat-raised-button color="primary" routerLink="/management/users">
+                    <mat-icon>people</mat-icon>
+                    Manage Users
+                  </button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-container>
+        </div>
+      </mat-tab>
+
+      <!-- Submissions Tab -->
+      <mat-tab label="Submissions">
+        <div class="tab-content">
+          <div class="my-submissions-section">
+            <div class="submissions-list" *ngIf="!isLoadingSubmissions && mySubmissions.length > 0">
+              <mat-card class="submission-card" *ngFor="let submission of mySubmissions">
+                <mat-card-content>
+                  <div class="submission-info">
+                    <div class="submission-header">
+                      <h4>Form Submission #{{ submission.id }}</h4>
+                      <span class="submission-date">{{ submission.submittedAt | date:'medium' }}</span>
+                    </div>
+                    <div class="submission-details">
+                      <span class="form-id">Form ID: {{ submission.formId }}</span>
+                      <span class="values-count">{{ submission.values.length }} fields completed</span>
+                    </div>
+                    <div class="submission-actions">
+                      <button 
+                        mat-button 
+                        color="primary" 
+                        (click)="viewSubmissionDetails(submission.id!)"
+                        [disabled]="!submission.id">
+                        <mat-icon>visibility</mat-icon>
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            <div class="loading-state" *ngIf="isLoadingSubmissions">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>Loading submissions...</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!isLoadingSubmissions && mySubmissions.length === 0">
+              <mat-icon>history</mat-icon>
+              <h3>No Submissions Yet</h3>
+              <p>You haven't submitted any forms yet.</p>
+            </div>
+
+            <div class="section-actions" *ngIf="mySubmissions.length > 0">
+              <button mat-raised-button color="primary" (click)="viewAllSubmissions()">
+                <mat-icon>list</mat-icon>
+                View All Submissions
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+
+  </div>
+</div>

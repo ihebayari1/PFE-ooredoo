@@ -1,0 +1,162 @@
+<div class="flash-management-container">
+  <!-- Header -->
+  <mat-toolbar class="management-header">
+    <span>Flash Management</span>
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" (click)="showCreateForm = true">
+      <mat-icon>add</mat-icon>
+      Create Flash
+    </button>
+  </mat-toolbar>
+
+  <!-- Search Bar -->
+  <div class="search-container">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search flashes</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (input)="searchFlashes()" placeholder="Search by title...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <!-- Create/Edit Form -->
+  <mat-card *ngIf="showCreateForm || showEditForm" class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ showCreateForm ? 'Create New Flash' : 'Edit Flash' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="flashForm" (ngSubmit)="showCreateForm ? createFlash() : updateFlash()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title" placeholder="Enter flash title">
+          <mat-error *ngIf="flashForm.get('title')?.hasError('required')">
+            Title is required
+          </mat-error>
+          <mat-error *ngIf="flashForm.get('title')?.hasError('minlength')">
+            Title must be at least 2 characters
+          </mat-error>
+          <mat-error *ngIf="flashForm.get('title')?.hasError('maxlength')">
+            Title must not exceed 200 characters
+          </mat-error>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="isActive" class="checkbox-field">
+          Active
+        </mat-checkbox>
+
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="flashForm.invalid">
+            {{ showCreateForm ? 'Create' : 'Update' }}
+          </button>
+          <button mat-button type="button" (click)="cancelForm()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Flash List -->
+  <div *ngIf="!isLoading" class="flash-list">
+    <mat-card *ngFor="let flash of filteredFlashes" class="flash-card">
+      <mat-card-header>
+        <mat-card-title>{{ flash.title }}</mat-card-title>
+        <mat-card-subtitle>
+          Created by {{ flash.createdBy ? (flash.createdBy.first_Name + ' ' + flash.createdBy.last_Name) : 'Unknown' }} on {{ flash.creation_Date | date:'medium' }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <!-- Flash Status -->
+        <div class="flash-status">
+          <mat-chip [color]="flash.isActive ? 'primary' : 'warn'" selected>
+            {{ flash.isActive ? 'Active' : 'Inactive' }}
+          </mat-chip>
+          <span class="files-count">{{ flash.filesCount }} file(s)</span>
+        </div>
+
+        <!-- Files Section -->
+        <mat-expansion-panel *ngIf="flash.files && flash.files.length > 0" class="files-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon>attach_file</mat-icon>
+              Files ({{ flash.files.length }})
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          
+          <div class="files-list">
+            <div *ngFor="let file of flash.files" class="file-item">
+              <div class="file-info">
+                <mat-icon [matTooltip]="file.fileType">{{ getFileIcon(file.fileType) }}</mat-icon>
+                <span class="file-name">{{ file.originalFileName }}</span>
+                <mat-chip [color]="getFileCategoryColor(file.fileCategory || '')" selected>
+                  {{ file.fileCategory }}
+                </mat-chip>
+                <span class="file-size">{{ formatFileSize(file.fileSize || 0) }}</span>
+              </div>
+              
+              <div class="file-actions">
+                <button mat-icon-button 
+                        [matTooltip]="'Download ' + file.originalFileName"
+                        (click)="downloadFile(flash.id, file.id!, file.originalFileName)">
+                  <mat-icon>download</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        color="warn"
+                        [matTooltip]="'Delete ' + file.originalFileName"
+                        (click)="deleteFile(flash.id, file.id!)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+          <input #fileInput type="file" 
+                 (change)="onFileSelected($event, flash.id)" 
+                 accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.wmv,.webm"
+                 style="display: none;">
+          
+          <button mat-stroked-button (click)="fileInput.click()" [disabled]="isUploading">
+            <mat-icon>cloud_upload</mat-icon>
+            Upload File
+          </button>
+          
+          <div *ngIf="isUploading" class="upload-progress">
+            <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+            <span class="progress-text">{{ uploadProgress }}%</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-button (click)="editFlash(flash)">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+        <button mat-button color="warn" (click)="deleteFlash(flash)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredFlashes.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">flash_off</mat-icon>
+    <h3>No flashes found</h3>
+    <p *ngIf="searchQuery">Try adjusting your search criteria</p>
+    <p *ngIf="!searchQuery">Create your first flash to get started</p>
+    <button *ngIf="!searchQuery" mat-raised-button color="primary" (click)="showCreateForm = true">
+      <mat-icon>add</mat-icon>
+      Create Flash
+    </button>
+  </div>
+</div>

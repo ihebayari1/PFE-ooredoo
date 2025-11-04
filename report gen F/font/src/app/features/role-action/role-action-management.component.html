@@ -1,0 +1,154 @@
+<div class="role-action-management-container">
+  <mat-toolbar class="management-toolbar">
+    <span>Role Action Management</span>
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" (click)="onCreateRoleAction()">
+      <mat-icon>add_task</mat-icon>
+      Create Role Action
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <!-- Role Action List -->
+    <mat-card class="role-action-list-card" *ngIf="!showCreateForm && !showEditForm">
+      <mat-card-header>
+        <mat-card-title>Role Actions</mat-card-title>
+        <mat-card-subtitle>Manage system permissions and actions</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="loading-container" *ngIf="isLoading">
+          <mat-spinner></mat-spinner>
+          <p>Loading role actions...</p>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+          <table mat-table [dataSource]="roleActions" class="role-action-table">
+            <!-- Action Key Column -->
+            <ng-container matColumnDef="actionKey">
+              <th mat-header-cell *matHeaderCellDef>Action Key</th>
+              <td mat-cell *matCellDef="let roleAction">
+                <div class="action-info">
+                  <mat-icon class="action-icon">task</mat-icon>
+                  <div class="action-details">
+                    <div class="action-key">{{ roleAction.actionKey }}</div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
+              <td mat-cell *matCellDef="let roleAction">
+                <div class="description-text">
+                  {{ roleAction.description || 'No description' }}
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Endpoint Pattern Column -->
+            <ng-container matColumnDef="endpointPattern">
+              <th mat-header-cell *matHeaderCellDef>Endpoint Pattern</th>
+              <td mat-cell *matCellDef="let roleAction">
+                <div class="endpoint-info">
+                  <mat-chip *ngIf="roleAction.endpointPattern" class="endpoint-chip">
+                    {{ roleAction.endpointPattern }}
+                  </mat-chip>
+                  <span *ngIf="!roleAction.endpointPattern" class="no-endpoint">No pattern</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>Created</th>
+              <td mat-cell *matCellDef="let roleAction">
+                {{ formatDate(roleAction.createdAt) }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let roleAction">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onEditRoleAction(roleAction)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  <button mat-menu-item (click)="onDeleteRoleAction(roleAction)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="roleActions.length === 0">
+            <mat-icon>task</mat-icon>
+            <p>No role actions found</p>
+            <button mat-raised-button color="primary" (click)="onCreateRoleAction()">
+              Create First Role Action
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Create/Edit Form -->
+    <mat-card class="form-card" *ngIf="showCreateForm || showEditForm">
+      <mat-card-header>
+        <mat-card-title>{{ showCreateForm ? 'Create Role Action' : 'Edit Role Action' }}</mat-card-title>
+        <mat-card-subtitle>{{ showCreateForm ? 'Add a new system permission' : 'Update role action details' }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="roleActionForm" (ngSubmit)="onSubmitForm()" class="role-action-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Action Key</mat-label>
+              <input matInput formControlName="actionKey" placeholder="e.g., FORM_CREATE, USER_DELETE" required>
+              <mat-hint>Use uppercase with underscores (e.g., FORM_CREATE)</mat-hint>
+              <mat-error *ngIf="roleActionForm.get('actionKey')?.hasError('required')">
+                Action key is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Describe what this action allows" rows="3"></textarea>
+              <mat-hint>Provide a clear description of what this permission allows</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Endpoint Pattern</mat-label>
+              <input matInput formControlName="endpointPattern" placeholder="e.g., /api/v1/forms/**">
+              <mat-hint>Optional: URL pattern this action applies to</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="roleActionForm.invalid">
+              {{ showCreateForm ? 'Create Role Action' : 'Update Role Action' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

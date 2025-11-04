@@ -1,0 +1,75 @@
+<div class="form-creation-container">
+  <div class="page-header">
+    <h1>
+      <mat-icon class="header-icon">add_circle</mat-icon>
+      Create New Form
+    </h1>
+    <p class="page-subtitle">Start building your form by providing basic information.</p>
+  </div>
+
+  <mat-card class="form-card">
+    <mat-card-header class="form-details-header">
+      <mat-card-title>
+        <mat-icon class="section-icon">description</mat-icon>
+        Form Details
+      </mat-card-title>
+      <mat-card-subtitle>Enter the basic information for your new form.</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="formCreationForm" (ngSubmit)="onSubmit()">
+        <div class="form-field">
+          <label class="field-label">
+            <mat-icon class="field-icon">text_fields</mat-icon>
+            Form Name*
+          </label>
+          <input 
+            matInput 
+            formControlName="name" 
+            placeholder="Enter form name"
+            class="form-input">
+          <div *ngIf="formCreationForm.get('name')?.hasError('required') && formCreationForm.get('name')?.touched" 
+               class="error-message">
+            Form name is required.
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label class="field-label">
+            <mat-icon class="field-icon info-icon">info</mat-icon>
+            Form Description*
+          </label>
+          <textarea 
+            matInput 
+            formControlName="description" 
+            placeholder="Enter form description" 
+            rows="4"
+            maxlength="500"
+            class="form-textarea">
+          </textarea>
+          <div class="char-counter">{{ formCreationForm.get('description')?.value?.length || 0 }}/500</div>
+          <div *ngIf="formCreationForm.get('description')?.hasError('required') && formCreationForm.get('description')?.touched" 
+               class="error-message">
+            Form description is required.
+          </div>
+        </div>
+        
+        <div class="form-actions">
+          <button mat-stroked-button type="button" routerLink="/forms-list" class="cancel-button">
+            <mat-icon>arrow_back</mat-icon>
+            Cancel
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            [disabled]="formCreationForm.invalid || isSubmitting"
+            class="create-button">
+            <span *ngIf="isSubmitting">Creating...</span>
+            <span *ngIf="!isSubmitting">Create Form</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

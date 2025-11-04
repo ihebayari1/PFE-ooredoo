@@ -1,0 +1,161 @@
+<div class="preview-dialog-container">
+  <div class="preview-dialog-header">
+    <div class="header-content">
+      <div class="form-info">
+        <mat-icon class="form-icon">description</mat-icon>
+        <div class="form-details">
+          <h2>{{data.formName}}</h2>
+          <p *ngIf="data.formDescription" class="form-description">{{data.formDescription}}</p>
+        </div>
+      </div>
+      <button mat-icon-button class="close-button" (click)="closeDialog()" matTooltip="Close Preview">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="preview-dialog-content">
+    <div class="preview-form-container">
+      <div class="form-preview-header">
+        <mat-icon class="preview-icon">visibility</mat-icon>
+        <h3>Form Preview</h3>
+        <span class="preview-badge">Live Preview</span>
+      </div>
+      
+      <div class="preview-form-fields">
+        @for (item of data.formFields; track $index) {
+        <div class="preview-field-container">
+          <!-- Text input -->
+          @if(item.inputType === 'text' || item.inputType === 'email'){
+          <mat-form-field appearance="outline" class="enhanced-field">
+            <mat-label>{{item.label}}</mat-label>
+            <input matInput [type]="item.inputType" [placeholder]="item.placeHolder">
+            <mat-icon matPrefix>{{item.icon}}</mat-icon>
+            <mat-hint *ngIf="item.required" class="required-hint">Required field</mat-hint>
+          </mat-form-field>
+          }
+
+          <!-- Number input -->
+          @if(item.inputType === 'number'){
+          <mat-form-field appearance="outline" class="enhanced-field">
+            <mat-label>{{item.label}}</mat-label>
+            <input matInput type="number" [min]="item.min" [max]="item.max" [placeholder]="item.placeHolder">
+            <mat-icon matPrefix>{{item.icon}}</mat-icon>
+            <mat-hint *ngIf="item.required" class="required-hint">Required field</mat-hint>
+          </mat-form-field>
+          }
+
+          <!-- Select dropdown -->
+          @if(item.inputType === 'select'){
+          <mat-form-field appearance="outline" class="enhanced-field">
+            <mat-label>{{item.label}}</mat-label>
+            <mat-select [placeholder]="item.placeHolder">
+              @for (option of item.options; track option) {
+              <mat-option [value]="option.value">{{option.label}}</mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>{{item.icon}}</mat-icon>
+            <mat-hint *ngIf="item.required" class="required-hint">Required field</mat-hint>
+          </mat-form-field>
+          }
+
+          <!-- Checkbox -->
+          @if(item.inputType === 'checkbox'){
+          <div class="checkbox-field enhanced-field">
+            <label class="checkbox-group-label">{{item.label}}
+              <span *ngIf="item.required" class="required-indicator">*</span>
+            </label>
+            
+            <!-- Selection status and limits -->
+            <div class="selection-info" *ngIf="item.minSelections || item.maxSelections">
+              <span class="selection-status" [class.invalid]="!isSelectionValid(item)">
+                {{getSelectionStatus(item)}}
+              </span>
+              <div class="selection-limits" *ngIf="item.minSelections || item.maxSelections">
+                <small class="limit-text">
+                  @if(item.minSelections > 0 && item.maxSelections > 0) {
+                    Select between {{item.minSelections}} and {{item.maxSelections}} options
+                  } @else if(item.minSelections > 0) {
+                    Select at least {{item.minSelections}} options
+                  } @else if(item.maxSelections > 0) {
+                    Select up to {{item.maxSelections}} options
+                  }
+                </small>
+              </div>
+            </div>
+
+            <div class="checkbox-options">
+              @for (option of item.options; track option) {
+              <mat-checkbox 
+                [value]="option.value"
+                [disabled]="isCheckboxDisabled(item, option.value)"
+                (change)="onCheckboxChange(item.label, option.value, $event.checked)">
+                {{option.label}}
+              </mat-checkbox>
+              }
+            </div>
+            
+            <!-- Validation message -->
+            <div class="validation-message" *ngIf="!isSelectionValid(item)">
+              <mat-icon class="error-icon">error</mat-icon>
+              <span class="error-text">
+                @if(item.minSelections > 0 && ((checkboxSelections[item.label] || []).length) < item.minSelections) {
+                  Please select at least {{item.minSelections}} options
+                } @else if(item.maxSelections > 0 && ((checkboxSelections[item.label] || []).length) > item.maxSelections) {
+                  Please select no more than {{item.maxSelections}} options
+                }
+              </span>
+            </div>
+          </div>
+          }
+
+          <!-- Radio buttons -->
+          @if(item.inputType === 'radio'){
+          <div class="radio-group-field enhanced-field">
+            <label class="radio-group-label">{{item.label}}
+              <span *ngIf="item.required" class="required-indicator">*</span>
+            </label>
+            <mat-radio-group>
+              @for (option of item.options; track option) {
+              <mat-radio-button [value]="option.value">
+                {{option.label}}
+              </mat-radio-button>
+              }
+            </mat-radio-group>
+          </div>
+          }
+
+          <!-- Textarea -->
+          @if(item.inputType === 'textarea'){
+          <mat-form-field appearance="outline" class="enhanced-field">
+            <mat-label>{{item.label}}</mat-label>
+            <textarea matInput [rows]="item.rows" [placeholder]="item.placeHolder"></textarea>
+            <mat-icon matPrefix>{{item.icon}}</mat-icon>
+            <mat-hint *ngIf="item.required" class="required-hint">Required field</mat-hint>
+          </mat-form-field>
+          }
+
+          <!-- Date input -->
+          @if(item.inputType === 'date'){
+          <mat-form-field appearance="outline" class="enhanced-field">
+            <mat-label>{{item.label}}</mat-label>
+            <input matInput [matDatepicker]="picker" [placeholder]="item.placeHolder">
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            <mat-icon matPrefix>{{item.icon}}</mat-icon>
+            <mat-hint *ngIf="item.required" class="required-hint">Required field</mat-hint>
+          </mat-form-field>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-dialog-actions">
+    <button mat-raised-button color="primary" (click)="closeDialog()" class="done-button">
+      <mat-icon>check_circle</mat-icon>
+      Done
+    </button>
+  </div>
+</div>
