@@ -1,0 +1,72 @@
+<div class="pin-container">
+  <div class="pin-form">
+    <div class="pin-header">
+      <div class="pin-icon">
+        <mat-icon>lock</mat-icon>
+      </div>
+      <h2>PIN Verification</h2>
+      <p *ngIf="email" class="email-info">
+        Enter your PIN for <strong>{{ email }}</strong>
+      </p>
+      <p class="instruction">Please enter your 4-digit PIN to complete your login:</p>
+    </div>
+
+    <form [formGroup]="pinForm" (ngSubmit)="onSubmit()" class="pin-form-content">
+      <mat-form-field appearance="outline">
+        <mat-label>PIN</mat-label>
+        <input 
+          matInput 
+          [type]="hidePin ? 'password' : 'text'" 
+          formControlName="pin" 
+          placeholder="1234"
+          maxlength="4"
+          autocomplete="off"
+        />
+        <button 
+          mat-icon-button 
+          matSuffix 
+          type="button"
+          (click)="togglePinVisibility()"
+          [attr.aria-label]="'Hide PIN'"
+          [attr.aria-pressed]="hidePin">
+          <mat-icon>{{ hidePin ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="pinForm.get('pin')?.invalid && pinForm.get('pin')?.touched">
+          PIN must be exactly 4 digits
+        </mat-error>
+      </mat-form-field>
+
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        class="verify-button"
+        [disabled]="isSubmitting || pinForm.invalid">
+        {{ isSubmitting ? 'Verifying...' : 'Verify PIN' }}
+      </button>
+      
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+      
+      <div *ngIf="success" class="success-message">
+        {{ success }}
+      </div>
+    </form>
+
+    <div class="actions">
+      <button 
+        mat-button 
+        type="button" 
+        (click)="goBackToLogin()"
+        [disabled]="isSubmitting"
+        class="back-button">
+        Back to Login
+      </button>
+    </div>
+
+    <div class="help-text">
+      <p>Enter the 4-digit PIN associated with your account for additional security.</p>
+    </div>
+  </div>
+</div>

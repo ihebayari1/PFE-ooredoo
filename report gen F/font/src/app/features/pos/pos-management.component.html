@@ -1,0 +1,331 @@
+<div class="pos-management-container">
+  <mat-toolbar class="management-toolbar">
+    <button mat-icon-button routerLink="/admin" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>POS Management</span>
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" (click)="onCreatePOS()">
+      <mat-icon>store</mat-icon>
+      Create POS
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <!-- POS List -->
+    <mat-card class="pos-list-card" *ngIf="!showCreateForm && !showEditForm">
+      <mat-card-header>
+        <mat-card-title>Point of Sale (POS)</mat-card-title>
+        <mat-card-subtitle>Manage point of sale locations and their users</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="loading-container" *ngIf="isLoading">
+          <mat-spinner></mat-spinner>
+          <p>Loading POS...</p>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+          <table mat-table [dataSource]="posList" class="pos-table">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>POS Name</th>
+              <td mat-cell *matCellDef="let pos">
+                <div class="pos-info">
+                  <mat-icon class="pos-icon">store</mat-icon>
+                  <div class="pos-details">
+                    <div class="pos-name">{{ pos.posName }}</div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Code Column -->
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Code</th>
+              <td mat-cell *matCellDef="let pos">
+                <mat-chip class="code-chip">{{ pos.codeOfPOS }}</mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Sector Column -->
+            <ng-container matColumnDef="sector">
+              <th mat-header-cell *matHeaderCellDef>Sector</th>
+              <td mat-cell *matCellDef="let pos">
+                <div class="sector-info">
+                  <mat-icon class="sector-icon">domain</mat-icon>
+                  <span>{{ getSectorName(pos) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Head Column -->
+            <ng-container matColumnDef="headOfPOS">
+              <th mat-header-cell *matHeaderCellDef>Head of POS</th>
+              <td mat-cell *matCellDef="let pos">
+                <div class="head-info">
+                  <mat-icon class="head-icon">person</mat-icon>
+                  <span>{{ getHeadName(pos) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Users Count Column -->
+            <ng-container matColumnDef="usersCount">
+              <th mat-header-cell *matHeaderCellDef>Users</th>
+              <td mat-cell *matCellDef="let pos">
+                <button mat-stroked-button class="users-count-button" [disabled]="true">
+                  {{ getUsersCount(pos) }} users
+                </button>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="createdDate">
+              <th mat-header-cell *matHeaderCellDef>Created</th>
+              <td mat-cell *matCellDef="let pos">
+                {{ formatDate(pos.creation_Date) }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let pos">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onEditPOS(pos)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  <button mat-menu-item (click)="onManageUsers(pos)">
+                    <mat-icon>group</mat-icon>
+                    <span>Manage Users</span>
+                  </button>
+                  <button mat-menu-item (click)="onDeletePOS(pos)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="posList.length === 0">
+            <mat-icon>store</mat-icon>
+            <p>No POS found</p>
+            <button mat-raised-button color="primary" (click)="onCreatePOS()">
+              Create First POS
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- POS Details -->
+    <mat-card class="details-card" *ngIf="!showCreateForm && !showEditForm && !showUserAssignment && posList.length > 0">
+      <mat-card-header>
+        <mat-card-title>POS Details</mat-card-title>
+        <mat-card-subtitle>View detailed information for each POS</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <mat-accordion multi="true">
+          <mat-expansion-panel *ngFor="let pos of posList">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon class="pos-icon">store</mat-icon>
+                {{ pos.posName }}
+              </mat-panel-title>
+              <mat-panel-description>
+                <mat-chip class="code-chip">{{ pos.codeOfPOS }}</mat-chip>
+                {{ getUsersCount(pos) }} users • Head: {{ getHeadName(pos) }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            
+            <div class="pos-details-content">
+              <div class="pos-info-section">
+                <h4>POS Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <mat-icon>store</mat-icon>
+                    <span><strong>Name:</strong> {{ pos.posName }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>code</mat-icon>
+                    <span><strong>Code:</strong> {{ pos.codeOfPOS }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>domain</mat-icon>
+                    <span><strong>Sector:</strong> {{ getSectorName(pos) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>person</mat-icon>
+                    <span><strong>Head:</strong> {{ getHeadName(pos) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>people</mat-icon>
+                    <span><strong>Users:</strong> {{ getUsersCount(pos) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span><strong>Created:</strong> {{ formatDate(pos.creation_Date) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Create/Edit Form -->
+    <mat-card class="form-card" *ngIf="showCreateForm || showEditForm">
+      <mat-card-header>
+        <mat-card-title>{{ showCreateForm ? 'Create POS' : 'Edit POS' }}</mat-card-title>
+        <mat-card-subtitle>{{ showCreateForm ? 'Add a new point of sale location' : 'Update POS details' }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="posForm" (ngSubmit)="onSubmitForm()" class="pos-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>POS Name</mat-label>
+              <input matInput formControlName="posName" placeholder="Enter POS name" required>
+              <mat-error *ngIf="posForm.get('posName')?.hasError('required')">
+                POS name is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>POS Code</mat-label>
+              <input matInput formControlName="codeOfPOS" placeholder="Enter POS code" required>
+              <mat-error *ngIf="posForm.get('codeOfPOS')?.hasError('required')">
+                POS code is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Sector</mat-label>
+              <mat-select formControlName="sectorId" required>
+                <mat-option *ngFor="let sector of sectors" [value]="sector.id">
+                  {{ sector.sectorName }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="posForm.get('sectorId')?.hasError('required')">
+                Sector is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Head of POS</mat-label>
+              <mat-select formControlName="headOfPOSId">
+                <mat-option [value]="null">No Head</mat-option>
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.first_Name }} {{ user.last_Name }} ({{ user.email }})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="posForm.invalid">
+              {{ showCreateForm ? 'Create POS' : 'Update POS' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- User Assignment View -->
+    <mat-card class="user-assignment-card" *ngIf="showUserAssignment && selectedPOS">
+      <mat-card-header>
+        <mat-card-title>Manage Users - {{ selectedPOS.posName }}</mat-card-title>
+        <mat-card-subtitle>Assign or unassign users to this POS</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="user-assignment-container">
+          <!-- Assigned Users Section -->
+          <div class="assigned-users-section">
+            <div class="section-header">
+              <h3>Assigned Users ({{ posUsers.length }})</h3>
+              <mat-icon class="info-icon" matTooltip="Users currently assigned to this POS">info</mat-icon>
+            </div>
+            <div class="users-list" *ngIf="posUsers.length > 0">
+              <div class="user-item" *ngFor="let user of posUsers">
+                <div class="user-info">
+                  <mat-icon class="user-avatar-icon">person</mat-icon>
+                  <div class="user-details">
+                    <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                    <span class="user-role" *ngIf="user.role">{{ user.role.name }}</span>
+                  </div>
+                </div>
+                <button mat-icon-button color="warn" class="action-button" (click)="unassignUserFromPOS(user.id!)" title="Unassign user">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="empty-state" *ngIf="posUsers.length === 0">
+              <p>No users assigned to this POS</p>
+            </div>
+          </div>
+
+          <!-- Available Users Section -->
+          <div class="available-users-section">
+            <h3>Available Users</h3>
+            <div class="users-action-bar">
+              <button mat-raised-button color="primary" class="assign-button"
+                      (click)="assignSelectedUsers()" 
+                      [disabled]="selectedUsersForAssignment.size === 0">
+                <mat-icon>add</mat-icon>
+                Assign Selected ({{ selectedUsersForAssignment.size }})
+              </button>
+            </div>
+            <div class="users-list" *ngIf="availableUsers.length > 0">
+              <div class="user-item available-user-item" *ngFor="let user of availableUsers">
+                <mat-checkbox 
+                  class="user-checkbox"
+                  [checked]="selectedUsersForAssignment.has(user.id!)"
+                  (change)="toggleUserSelection(user.id!)">
+                </mat-checkbox>
+                <div class="user-info">
+                  <mat-icon class="user-avatar-icon">person</mat-icon>
+                  <div class="user-details">
+                    <span class="user-name">{{ user.first_Name }} {{ user.last_Name }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                    <span class="user-role" *ngIf="user.role">{{ user.role.name }}</span>
+                  </div>
+                </div>
+                <button mat-icon-button color="primary" class="assign-single-button" (click)="assignUserToPOS(user.id!)" title="Assign user">
+                  <mat-icon>add_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="empty-state" *ngIf="availableUsers.length === 0">
+              <p>No available users to assign</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button (click)="cancelUserAssignment()">
+            <mat-icon>arrow_back</mat-icon>
+            Back to POS List
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

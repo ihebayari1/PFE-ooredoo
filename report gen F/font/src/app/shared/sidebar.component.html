@@ -1,0 +1,301 @@
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">O</div>
+      <h3 class="logo-text">OOREDOO</h3>
+    </div>
+    <div class="user-info" *ngIf="user">
+      <p class="user-name">{{ user.email }}</p>
+      <p class="user-role">{{ userRole }}</p>
+    </div>
+  </div>
+
+  <div class="sidebar-content">
+    <!-- Debug Information (temporary) -->
+    <!--div class="nav-section" style="background: #f0f0f0; padding: 10px; margin: 5px; border-radius: 5px; font-size: 12px;">
+      <div><strong>Debug Info:</strong></div>
+      <div>User Role: {{ userRole }}</div>
+      <div>Roles: {{ roles | json }}</div>
+      <div>Is Admin Page: {{ isAdminPage }}</div>
+      <div>Should Show Admin Nav: {{ shouldShowAdminNavigation() }}</div>
+      <div>Should Show Simple Nav: {{ shouldShowSimpleUserNavigation() }}</div>
+    </div-->
+
+    <!-- Admin Navigation (for MAIN_ADMIN users) -->
+    <div class="nav-section" *ngIf="shouldShowAdminNavigation()">
+      <div class="section-title">Main</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/admin" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">admin_panel_settings</mat-icon>
+            <span class="nav-text">Admin Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-text">User Dashboard</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ENTERPRISE_ADMIN Navigation -->
+    <div class="nav-section" *ngIf="isEnterpriseAdmin()">
+      <div class="section-title">Enterprise Management</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/regions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">location_on</mat-icon>
+            <span class="nav-text">Regions</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/zones" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">place</mat-icon>
+            <span class="nav-text">Zones</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/sectors" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">domain</mat-icon>
+            <span class="nav-text">Sectors</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/pos" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">store</mat-icon>
+            <span class="nav-text">POS</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/users" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">people</mat-icon>
+            <span class="nav-text">Users</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- HEAD_OF_* Roles Navigation -->
+    <div class="nav-section" *ngIf="isAnyHeadRole()">
+      <div class="section-title">My Organization</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isHeadOfRegion()">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" [fragment]="'hierarchy'">
+            <mat-icon class="nav-icon">location_on</mat-icon>
+            <span class="nav-text">My Region</span>
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isHeadOfZone()">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" [fragment]="'hierarchy'">
+            <mat-icon class="nav-icon">place</mat-icon>
+            <span class="nav-text">My Zone</span>
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isHeadOfSector()">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" [fragment]="'hierarchy'">
+            <mat-icon class="nav-icon">domain</mat-icon>
+            <span class="nav-text">My Sector</span>
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isHeadOfPOS()">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" [fragment]="'hierarchy'">
+            <mat-icon class="nav-icon">store</mat-icon>
+            <span class="nav-text">My POS</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Simple User Navigation (for SIMPLE_USER only) -->
+    <div class="nav-section" *ngIf="shouldShowSimpleUserNavigation()">
+      <div class="section-title">Main</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-text">My Dashboard</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Forms Section for MAIN_ADMIN users -->
+    <div class="nav-section" *ngIf="shouldShowAdminNavigation()">
+      <div class="section-title">Forms</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/forms-list" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">description</mat-icon>
+            <span class="nav-text">All Forms</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/forms" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">add_box</mat-icon>
+            <span class="nav-text">Create Form</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Forms Section for ENTERPRISE_ADMIN -->
+    <div class="nav-section" *ngIf="isEnterpriseAdmin()">
+      <div class="section-title">Forms</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/forms-list" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">description</mat-icon>
+            <span class="nav-text">Enterprise Forms</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/form-builder" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">add_box</mat-icon>
+            <span class="nav-text">Create Form</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Forms Section for HEAD_OF_* Roles -->
+    <div class="nav-section" *ngIf="isAnyHeadRole()">
+      <div class="section-title">My Work</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/forms-list" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">assignment_turned_in</mat-icon>
+            <span class="nav-text">Assigned Forms</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/submissions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">assignment</mat-icon>
+            <span class="nav-text">Hierarchy Submissions</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Forms Section for Simple Users -->
+    <div class="nav-section" *ngIf="shouldShowSimpleUserNavigation()">
+      <div class="section-title">My Work</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/forms-list" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">assignment_turned_in</mat-icon>
+            <span class="nav-text">My Assigned Forms</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/submissions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">assignment</mat-icon>
+            <span class="nav-text">My Submissions</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Admin Management Section for MAIN_ADMIN users -->
+    <div class="nav-section" *ngIf="shouldShowAdminNavigation()">
+      <div class="section-title">Management</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/submissions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">assignment</mat-icon>
+            <span class="nav-text">All Submissions</span>
+            <span class="nav-badge" *ngIf="pendingSubmissions > 0">{{ pendingSubmissions }}</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/reports" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">analytics</mat-icon>
+            <span class="nav-text">Reports</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- System Management - Only for MAIN_ADMIN users -->
+    <div class="nav-section" *ngIf="shouldShowAdminNavigation()">
+      <div class="section-title">System Management</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a routerLink="/management/enterprises" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">business</mat-icon>
+            <span class="nav-text">Manage Enterprise</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/users" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">people</mat-icon>
+            <span class="nav-text">Manage User</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/regions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">location_on</mat-icon>
+            <span class="nav-text">Manage Region</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/zones" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">place</mat-icon>
+            <span class="nav-text">Manage Zone</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/sectors" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">domain</mat-icon>
+            <span class="nav-text">Manage Sector</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/pos" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">store</mat-icon>
+            <span class="nav-text">Manage POS</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/roles" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">security</mat-icon>
+            <span class="nav-text">Manage Role</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/role-actions" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">task</mat-icon>
+            <span class="nav-text">Role Actions</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/management/flash" routerLinkActive="active" class="nav-link">
+            <mat-icon class="nav-icon">flash_on</mat-icon>
+            <span class="nav-text">Flash Info</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-button" (click)="logout()">
+      <mat-icon class="logout-icon">logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </div>
+</nav>
+  

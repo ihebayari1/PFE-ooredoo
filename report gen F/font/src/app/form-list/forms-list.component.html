@@ -1,0 +1,121 @@
+<div class="forms-list-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="main-icon">{{isSimpleUser ? 'assignment_turned_in' : 'description'}}</mat-icon>
+        <h1>{{pageTitle}}</h1>
+      </div>
+      <div class="actions-section">
+        <div class="form-count-badge">
+          <span>{{forms.length}} form{{forms.length !== 1 ? 's' : ''}}</span>
+        </div>
+        <button mat-raised-button (click)="goToDashboard()" class="dashboard-btn">
+          <mat-icon>dashboard</mat-icon>
+          Back to Dashboard
+        </button>
+        <div class="sort-selector" *ngIf="!isLoading && forms.length > 0">
+          <button mat-stroked-button (click)="changeSortOrder()" class="sort-btn">
+            <span>{{getSortButtonText()}}</span>
+            <mat-icon>{{getSortButtonIcon()}}</mat-icon>
+          </button>
+        </div>
+        <button mat-raised-button (click)="createNewForm()" class="create-btn" *ngIf="!isSimpleUser">
+          <mat-icon>add</mat-icon>
+          Create New Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="loading-content">
+      <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+      <h3>Loading your forms...</h3>
+      <p>Please wait while we fetch your forms</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && forms.length === 0" class="empty-state">
+    <div class="empty-content">
+      <mat-icon class="empty-icon">{{isSimpleUser ? 'assignment_turned_in' : 'description'}}</mat-icon>
+      <h2>{{isSimpleUser ? 'No Assigned Forms' : 'No Forms Yet'}}</h2>
+      <p>{{isSimpleUser ? 'You don\'t have any forms assigned to you at the moment. Contact your administrator to get forms assigned.' : 'You haven\'t created any forms yet. Get started by creating your first form and begin collecting data!'}}</p>
+      <button mat-raised-button color="primary" (click)="createNewForm()" class="empty-action-btn" *ngIf="!isSimpleUser">
+        <mat-icon>add_circle</mat-icon>
+        Create Your First Form
+      </button>
+    </div>
+  </div>
+
+  <!-- Forms Grid -->
+  <div *ngIf="!isLoading && forms.length > 0" class="forms-grid">
+    <mat-card *ngFor="let form of forms" class="form-card" (click)="viewForm(form.id)">
+      <!-- Card Header -->
+      <mat-card-header class="card-header">
+        <div class="form-icon-container">
+          <mat-icon class="form-icon">description</mat-icon>
+        </div>
+        <div class="form-info">
+          <mat-card-title class="form-title">{{ form.name }}</mat-card-title>
+          <mat-card-subtitle class="form-subtitle">{{ form.description || 'No description provided' }}</mat-card-subtitle>
+        </div>
+        <div class="form-status">
+          <span class="status-badge active">Active</span>
+        </div>
+      </mat-card-header>
+      
+      <!-- Card Content -->
+      <mat-card-content class="card-content">
+        <div class="form-details">
+          <div class="detail-item">
+            <mat-icon class="detail-icon">calendar_today</mat-icon>
+            <span class="detail-text">Created {{ form.createdAt | date:'MMM d, y' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="form.updatedAt">
+            <mat-icon class="detail-icon">update</mat-icon>
+            <span class="detail-text">Updated {{ form.updatedAt | date:'MMM d, y' }}</span>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon">person</mat-icon>
+            <span class="detail-text">Creator ID: {{ form.creatorId || 'Unknown' }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <!-- Card Actions -->
+      <mat-card-actions class="card-actions">
+        <!-- Simple User Actions -->
+        <ng-container *ngIf="isSimpleUser">
+          <button mat-icon-button (click)="viewForm(form.id); $event.stopPropagation()" matTooltip="Fill Form" class="action-btn submit-btn">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="previewForm(form); $event.stopPropagation()" matTooltip="Preview Form" class="action-btn preview-btn">
+            <mat-icon>preview</mat-icon>
+          </button>
+        </ng-container>
+        
+        <!-- Admin Actions -->
+        <ng-container *ngIf="!isSimpleUser">
+          <button mat-icon-button (click)="viewForm(form.id); $event.stopPropagation()" matTooltip="View Form" class="action-btn view-btn">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button (click)="editForm(form.id); $event.stopPropagation()" matTooltip="Edit Form" class="action-btn edit-btn">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="previewForm(form); $event.stopPropagation()" matTooltip="Preview Form" class="action-btn preview-btn">
+            <mat-icon>preview</mat-icon>
+          </button>
+          <button mat-icon-button (click)="manageUsers(form, $event)" matTooltip="Manage Users" class="action-btn manage-btn">
+            <mat-icon>group</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteForm(form.id, $event)" matTooltip="Delete Form" class="action-btn delete-btn">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </ng-container>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

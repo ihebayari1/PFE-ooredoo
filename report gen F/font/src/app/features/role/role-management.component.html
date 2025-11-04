@@ -1,0 +1,324 @@
+<div class="role-management-container">
+  <!-- Enhanced Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/admin" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="header-title-section">
+          <mat-icon class="page-icon">shield</mat-icon>
+          <div class="title-content">
+            <h1>Role Management</h1>
+            <p class="subtitle">Manage user roles, permissions, and access controls</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="stats-summary">
+          <div class="stat-item">
+            <span class="stat-number">{{ roles.length }}</span>
+            <span class="stat-label">Total Roles</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getTotalUsers() }}</span>
+            <span class="stat-label">Users</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Toolbar -->
+  <div class="management-toolbar">
+    <div class="toolbar-left">
+      <div class="search-section">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search roles</mat-label>
+          <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" 
+                 placeholder="Search by role name or permissions...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <div class="toolbar-right">
+      <button mat-raised-button color="primary" (click)="onCreateRole()" class="create-btn">
+        <mat-icon>shield</mat-icon>
+        Create Role
+      </button>
+    </div>
+  </div>
+
+  <div class="content-container">
+    <!-- Enhanced Role List -->
+    <div class="role-list-container" *ngIf="!showCreateForm && !showEditForm">
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="isLoading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading roles...</p>
+      </div>
+
+      <!-- Roles Grid View -->
+      <div class="roles-grid" *ngIf="!isLoading && filteredRoles.length > 0">
+        <mat-card *ngFor="let role of filteredRoles" class="role-card">
+          <mat-card-content>
+            <!-- Role Header -->
+            <div class="role-header">
+              <div class="role-icon">
+                <mat-icon>shield</mat-icon>
+              </div>
+              
+              <div class="role-info">
+                <h3 class="role-name">{{ role.name }}</h3>
+                <p class="role-created">Created: {{ formatDate(role.created_Date) }}</p>
+              </div>
+              
+              <div class="role-actions">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu" matTooltip="More Actions" class="more-actions-btn">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onEditRole(role)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit Role</span>
+                  </button>
+                  <button mat-menu-item (click)="onDeleteRole(role)" 
+                          [disabled]="isDeleting" 
+                          class="danger-action">
+                    <mat-spinner diameter="16" *ngIf="isDeleting"></mat-spinner>
+                    <mat-icon *ngIf="!isDeleting">delete</mat-icon>
+                    <span>{{ isDeleting ? 'Deleting...' : 'Delete Role' }}</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+
+            <!-- Role Permissions -->
+            <div class="role-permissions">
+              <h4 class="permissions-title">Permissions</h4>
+              <div class="permissions-container">
+                <div class="permissions-list" *ngIf="getActionNames(role).length > 0">
+                  <div class="permission-item" *ngFor="let actionName of getActionNames(role)">
+                    <mat-icon class="permission-icon">check_circle</mat-icon>
+                    <span class="permission-text">{{ actionName }}</span>
+                  </div>
+                </div>
+                <div class="no-permissions" *ngIf="getActionNames(role).length === 0">
+                  <mat-icon class="no-permissions-icon">block</mat-icon>
+                  <span>No permissions assigned</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role Users -->
+            <div class="role-users">
+              <h4 class="users-title">Assigned Users ({{ getUsersCount(role) }})</h4>
+              <div class="users-preview">
+                <div class="user-avatars" *ngIf="getUsersCount(role) > 0">
+                  <div class="user-avatar" *ngFor="let user of getUsersWithRole(role).slice(0, 3)">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                  <div class="more-users" *ngIf="getUsersCount(role) > 3">
+                    +{{ getUsersCount(role) - 3 }} more
+                  </div>
+                </div>
+                <div class="no-users" *ngIf="getUsersCount(role) === 0">
+                  <mat-icon>person_off</mat-icon>
+                  <span>No users assigned</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role Management Actions -->
+            <div class="role-management">
+              <button mat-button (click)="toggleRoleExpansion(role.id!)" class="manage-users-btn">
+                <mat-icon class="chevron-icon">{{ isRoleExpanded(role.id!) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                <span class="manage-text">Manage Users</span>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading && filteredRoles.length === 0">
+        <mat-icon class="empty-icon">shield</mat-icon>
+        <h3>No roles found</h3>
+        <p>Create your first role to define user permissions and access controls</p>
+        <button mat-raised-button color="primary" (click)="onCreateRole()">
+          <mat-icon>shield</mat-icon>
+          Create First Role
+        </button>
+      </div>
+    </div>
+
+    <!-- Enhanced User Management Section -->
+    <div class="user-management-section" *ngFor="let role of filteredRoles">
+      <mat-expansion-panel 
+        [expanded]="isRoleExpanded(role.id!)" 
+        (opened)="toggleRoleExpansion(role.id!)"
+        (closed)="toggleRoleExpansion(role.id!)"
+        class="user-panel">
+        
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>people</mat-icon>
+            Manage Users for "{{ role.name }}"
+          </mat-panel-title>
+          <mat-panel-description>
+            {{ getUsersWithRole(role).length }} users assigned
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="user-management-content">
+          <!-- Users with this role -->
+          <div class="users-section">
+            <div class="section-header">
+              <h4>Users with this role</h4>
+              <span class="user-count">{{ getUsersWithRole(role).length }}</span>
+            </div>
+            <div class="users-list" *ngIf="getUsersWithRole(role).length > 0">
+              <div class="user-item" *ngFor="let user of getUsersWithRole(role)">
+                <div class="user-avatar-small">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="user-details">
+                  <div class="user-name">{{ getUserName(user) }}</div>
+                  <div class="user-email">{{ getUserEmail(user) }}</div>
+                </div>
+                <button mat-icon-button 
+                        (click)="onRemoveRoleFromUser(role, user.id!)"
+                        [disabled]="isAssigning"
+                        matTooltip="Remove Role"
+                        class="remove-btn">
+                  <mat-spinner diameter="16" *ngIf="isAssigning"></mat-spinner>
+                  <mat-icon *ngIf="!isAssigning">remove_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="no-users" *ngIf="getUsersWithRole(role).length === 0">
+              <mat-icon>person_off</mat-icon>
+              <p>No users assigned to this role</p>
+            </div>
+          </div>
+
+          <!-- Available users to assign -->
+          <div class="available-users-section">
+            <div class="section-header">
+              <h4>Available Users</h4>
+              <span class="user-count">{{ getUsersWithoutRole(role).length }}</span>
+            </div>
+            <div class="users-list" *ngIf="getUsersWithoutRole(role).length > 0">
+              <div class="user-item" *ngFor="let user of getUsersWithoutRole(role)">
+                <div class="user-avatar-small">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="user-details">
+                  <div class="user-name">{{ getUserName(user) }}</div>
+                  <div class="user-email">{{ getUserEmail(user) }}</div>
+                </div>
+                <button mat-icon-button 
+                        (click)="onAssignRoleToUser(role, user.id!)"
+                        [disabled]="isAssigning"
+                        matTooltip="Assign Role"
+                        class="assign-btn">
+                  <mat-spinner diameter="16" *ngIf="isAssigning"></mat-spinner>
+                  <mat-icon *ngIf="!isAssigning">add_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="no-users" *ngIf="getUsersWithoutRole(role).length === 0">
+              <mat-icon>check_circle</mat-icon>
+              <p>All users already have this role</p>
+            </div>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </div>
+
+    <!-- Enhanced Create/Edit Form -->
+    <div class="form-container" *ngIf="showCreateForm || showEditForm">
+      <mat-card class="form-card">
+        <mat-card-header>
+          <div class="form-header">
+            <div class="form-title-section">
+              <mat-icon class="form-icon">{{ showCreateForm ? 'shield' : 'edit' }}</mat-icon>
+              <div class="form-title-content">
+                <h2>{{ showCreateForm ? 'Create New Role' : 'Edit Role' }}</h2>
+                <p>{{ showCreateForm ? 'Define a new role with specific permissions' : 'Update role details and permissions' }}</p>
+              </div>
+            </div>
+            <button mat-icon-button (click)="cancelForm()" class="close-btn">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="roleForm" (ngSubmit)="onSubmitForm()" class="role-form">
+            <div class="form-section">
+              <h3 class="section-title">Role Information</h3>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Role Name</mat-label>
+                  <input matInput formControlName="name" placeholder="Enter role name" required>
+                  <mat-icon matPrefix>shield</mat-icon>
+                  <mat-error *ngIf="roleForm.get('name')?.hasError('required')">
+                    Role name is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3 class="section-title">Permission Assignment</h3>
+              <p class="section-description">Select the actions this role can perform. These permissions determine what users with this role can do in the system.</p>
+              
+              <div class="permissions-grid">
+                <div class="permission-card" 
+                     *ngFor="let action of roleActions" 
+                     [class.selected]="isPermissionSelected(action.id)">
+                  <mat-checkbox 
+                    [value]="action.id?.toString() || '0'"
+                    (change)="onPermissionChange($event, action.id)"
+                    [checked]="isPermissionSelected(action.id)"
+                    class="permission-checkbox">
+                    <div class="permission-content">
+                      <div class="permission-key">{{ action.actionKey }}</div>
+                      <div class="permission-description">{{ action.description }}</div>
+                    </div>
+                  </mat-checkbox>
+                </div>
+              </div>
+              
+              <div class="permission-summary" *ngIf="getSelectedPermissionsCount() > 0">
+                <h4>Selected Permissions ({{ getSelectedPermissionsCount() }})</h4>
+                <div class="selected-permissions">
+                  <mat-chip *ngFor="let actionId of getSelectedPermissionIds()" class="permission-chip">
+                    {{ getActionName(actionId) }}
+                  </mat-chip>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="cancelForm()" class="cancel-btn">
+                <mat-icon>close</mat-icon>
+                Cancel
+              </button>
+              <button mat-raised-button color="primary" type="submit" 
+                      [disabled]="roleForm.invalid || isCreating || isUpdating" 
+                      class="submit-btn">
+                <mat-spinner diameter="20" *ngIf="isCreating || isUpdating"></mat-spinner>
+                <mat-icon *ngIf="!isCreating && !isUpdating">{{ showCreateForm ? 'shield' : 'save' }}</mat-icon>
+                {{ showCreateForm ? (isCreating ? 'Creating...' : 'Create Role') : (isUpdating ? 'Updating...' : 'Update Role') }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

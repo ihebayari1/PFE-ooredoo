@@ -1,0 +1,222 @@
+<div class="component-management-container">
+  <!-- Header Section -->
+  <div class="management-header">
+    <div class="header-content">
+      <div class="header-left">
+        <mat-icon class="header-icon">widgets</mat-icon>
+        <div class="title-content">
+          <h1>Component Management</h1>
+          <p class="subtitle">Create and manage reusable form components</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button mat-raised-button color="primary" (click)="openCreateForm()" [disabled]="isLoading">
+          <mat-icon>add</mat-icon>
+          Create Component
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loading-container" *ngIf="isLoading && components.length === 0">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading components...</p>
+  </div>
+
+  <!-- Components List -->
+  <div class="content-section" *ngIf="!showCreateForm">
+    <mat-card *ngIf="components.length === 0 && !isLoading" class="empty-state">
+      <mat-card-content>
+        <mat-icon>inbox</mat-icon>
+        <h3>No Components Found</h3>
+        <p>Get started by creating your first reusable component.</p>
+        <button mat-raised-button color="primary" (click)="openCreateForm()">
+          <mat-icon>add</mat-icon>
+          Create Component
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="components-grid" *ngIf="components.length > 0">
+      <mat-card *ngFor="let component of components" class="component-card">
+        <mat-card-header>
+          <div class="component-header">
+            <div class="component-icon">
+              <mat-icon>{{ getComponentTypeIcon(component.elementType) }}</mat-icon>
+            </div>
+            <div class="component-info">
+              <mat-card-title>{{ component.label }}</mat-card-title>
+              <mat-card-subtitle>{{ getComponentTypeLabel(component.elementType) }}</mat-card-subtitle>
+            </div>
+          </div>
+          <div class="component-actions">
+            <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Actions">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="editComponent(component)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button mat-menu-item (click)="deleteComponent(component)" class="delete-action">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="component-details">
+            <div class="detail-item">
+              <mat-icon>label</mat-icon>
+              <span><strong>Type:</strong> {{ getComponentTypeLabel(component.elementType) }}</span>
+            </div>
+            <div class="detail-item" *ngIf="component.isGlobal">
+              <mat-icon>public</mat-icon>
+              <span><strong>Global:</strong> Yes</span>
+            </div>
+            <div class="detail-item" *ngIf="component.createdAt">
+              <mat-icon>schedule</mat-icon>
+              <span><strong>Created:</strong> {{ component.createdAt | date:'short' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="component.properties && component.properties.length > 0">
+              <mat-icon>settings</mat-icon>
+              <span><strong>Properties:</strong> {{ component.properties.length }}</span>
+            </div>
+            <div class="detail-item" *ngIf="component.options && component.options.length > 0">
+              <mat-icon>list</mat-icon>
+              <span><strong>Options:</strong> {{ component.options.length }}</span>
+            </div>
+          </div>
+
+          <!-- Properties Preview -->
+          <div class="properties-preview" *ngIf="component.properties && component.properties.length > 0">
+            <h4>Properties:</h4>
+            <div class="chips-container">
+              <mat-chip *ngFor="let prop of component.properties.slice(0, 3)">
+                {{ prop.propertyName }}: {{ prop.propertyValue }}
+              </mat-chip>
+              <mat-chip *ngIf="component.properties.length > 3">
+                +{{ component.properties.length - 3 }} more
+              </mat-chip>
+            </div>
+          </div>
+
+          <!-- Options Preview -->
+          <div class="options-preview" *ngIf="component.options && component.options.length > 0">
+            <h4>Options:</h4>
+            <div class="chips-container">
+              <mat-chip *ngFor="let option of component.options.slice(0, 3)">
+                {{ option.label }}
+              </mat-chip>
+              <mat-chip *ngIf="component.options.length > 3">
+                +{{ component.options.length - 3 }} more
+              </mat-chip>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Create/Edit Form -->
+  <div class="form-section" *ngIf="showCreateForm">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          {{ selectedComponent ? 'Edit Component' : 'Create New Component' }}
+        </mat-card-title>
+        <button mat-icon-button (click)="cancelCreate()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="componentForm" (ngSubmit)="selectedComponent ? updateComponent() : createComponent()">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Component Name</mat-label>
+              <input matInput formControlName="label" placeholder="Enter component name">
+              <mat-error *ngIf="componentForm.get('label')?.hasError('required')">
+                Component name is required
+              </mat-error>
+              <mat-error *ngIf="componentForm.get('label')?.hasError('minlength')">
+                Component name must be at least 2 characters
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Component Type</mat-label>
+              <mat-select formControlName="elementType">
+                <mat-option *ngFor="let type of componentTypes" [value]="type">
+                  {{ getComponentTypeLabel(type) }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="componentForm.get('elementType')?.hasError('required')">
+                Component type is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Placeholder</mat-label>
+              <input matInput formControlName="placeholder" placeholder="Enter placeholder text">
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-checkbox formControlName="required">Required Field</mat-checkbox>
+          </div>
+
+          <!-- Options Section (for DROPDOWN, RADIO, CHECKBOX) -->
+          <div class="options-section" *ngIf="requiresOptions">
+            <h3>Options</h3>
+            <p class="section-description">Add options for {{ selectedComponentType }} component</p>
+            
+            <div class="option-input-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Option Label</mat-label>
+                <input matInput [(ngModel)]="newOption.label" [ngModelOptions]="{standalone: true}" placeholder="Display text">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Option Value</mat-label>
+                <input matInput [(ngModel)]="newOption.value" [ngModelOptions]="{standalone: true}" placeholder="Value">
+              </mat-form-field>
+
+              <button mat-raised-button type="button" color="accent" (click)="addOption()">
+                <mat-icon>add</mat-icon>
+                Add Option
+              </button>
+            </div>
+
+            <div class="options-list" *ngIf="getSelectedComponentOptions().length > 0">
+              <div class="option-item" *ngFor="let option of getSelectedComponentOptions(); let i = index">
+                <mat-chip>
+                  <strong>{{ option.label }}</strong> ({{ option.value }})
+                </mat-chip>
+                <button mat-icon-button (click)="removeOption(i)" color="warn" matTooltip="Remove">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelCreate()">
+              Cancel
+            </button>
+            <button mat-raised-button type="submit" color="primary" [disabled]="componentForm.invalid || isLoading">
+              {{ selectedComponent ? 'Update' : 'Create' }} Component
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+.activation-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.loading-section, .error-section, .success-section, .activation-form-section {
+  text-align: center;
+  
+  h2 {
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+  
+  p {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+}
+
+.loading-section {
+  mat-spinner {
+    margin: 1rem auto;
+  }
+}
+
+.activation-form-section {
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    
+    mat-form-field {
+      width: 100%;
+    }
+  }
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+  
+  button {
+    flex: 1;
+    max-width: 200px;
+  }
+}
+
+.error-section {
+  button {
+    margin-top: 1rem;
+  }
+} 

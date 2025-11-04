@@ -1,0 +1,230 @@
+<div class="submission-management-container">
+  <!-- Loading indicator -->
+  <app-loading-spinner 
+    *ngIf="loading" 
+    [overlay]="true" 
+    message="Loading submissions...">
+  </app-loading-spinner>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="goBack()" matTooltip="Go back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-content">
+        <h1>{{pageTitle}}</h1>
+        <p *ngIf="form && !isSimpleUser">{{ form.name }}</p>
+        <p *ngIf="isSimpleUser">Your submitted forms</p>
+      </div>
+    </div>
+    <div class="header-actions" *ngIf="!isSimpleUser">
+      <button 
+        mat-raised-button 
+        color="accent" 
+        (click)="exportToCSV()"
+        [disabled]="loading || submissions.length === 0"
+        matTooltip="Export submissions to CSV">
+        <mat-icon>download</mat-icon>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Search and Filters - Only for Admins -->
+  <mat-card class="search-card" *ngIf="!isSimpleUser">
+    <mat-card-content>
+      <div class="search-filters">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search submissions</mat-label>
+          <input 
+            matInput 
+            formControlName="searchTerm"
+            placeholder="Search by submitter or content...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="date-field">
+          <mat-label>From Date</mat-label>
+          <input 
+            matInput 
+            [matDatepicker]="fromDatePicker"
+            formControlName="fromDate"
+            placeholder="Start date">
+          <mat-datepicker-toggle matIconSuffix [for]="fromDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromDatePicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field">
+          <mat-label>To Date</mat-label>
+          <input 
+            matInput 
+            [matDatepicker]="toDatePicker"
+            formControlName="toDate"
+            placeholder="End date">
+          <mat-datepicker-toggle matIconSuffix [for]="toDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #toDatePicker></mat-datepicker>
+        </mat-form-field>
+
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="searchSubmissions()">
+          <mat-icon>search</mat-icon>
+          Search
+        </button>
+
+        <button 
+          mat-button 
+          (click)="clearFilters()">
+          Clear
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Simple User Submissions Cards -->
+  <div *ngIf="isSimpleUser && !loading && submissions.length > 0" class="submissions-cards">
+    <mat-card class="submission-card" *ngFor="let submission of submissions">
+      <mat-card-content>
+        <div class="submission-info">
+          <div class="submission-header">
+            <h4>Form Submission #{{ submission.id }}</h4>
+            <span class="submission-date">{{ submission.submittedAt | date:'medium' }}</span>
+          </div>
+          <div class="submission-details">
+            <span class="form-id">Form ID: {{ submission.formId }}</span>
+            <span class="values-count">{{ submission.values.length }} fields completed</span>
+          </div>
+          <div class="submission-actions">
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="viewSubmissionDetails(submission.id!)"
+              class="view-details-btn"
+              [disabled]="!submission.id">
+              <mat-icon>visibility</mat-icon>
+              View Details
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Admin All Submissions Cards -->
+  <div *ngIf="!isSimpleUser && !loading && submissions.length > 0" class="submissions-cards">
+    <mat-card class="submission-card" *ngFor="let submission of submissions">
+      <mat-card-content>
+        <div class="submission-info">
+          <div class="submission-header">
+            <h4>Form Submission #{{ submission.id }}</h4>
+            <span class="submission-date">{{ submission.submittedAt | date:'medium' }}</span>
+          </div>
+          <div class="submission-details">
+            <span class="form-id">Form ID: {{ submission.formId }}</span>
+            <span class="submitted-by">Submitted by: User #{{ submission.submittedById }}</span>
+            <span class="values-count">{{ submission.values.length }} fields completed</span>
+          </div>
+          <div class="submission-actions">
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="viewSubmissionDetails(submission.id!)"
+              class="view-details-btn"
+              [disabled]="!submission.id">
+              <mat-icon>visibility</mat-icon>
+              View Details
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Empty State for Simple Users -->
+  <div *ngIf="isSimpleUser && !loading && submissions.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">history</mat-icon>
+    <h3>No Submissions Yet</h3>
+    <p>You haven't submitted any forms yet.</p>
+  </div>
+
+  <!-- Empty State for Admins -->
+  <div *ngIf="!isSimpleUser && !loading && submissions.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">assignment</mat-icon>
+    <h3>No Submissions Found</h3>
+    <p>There are no form submissions in the system yet.</p>
+  </div>
+
+  <!-- Admin Table View -->
+  <mat-card class="table-card" *ngIf="!isSimpleUser">
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="displayedSubmissions" matSort class="submissions-table">
+          
+          <!-- Submission Date Column -->
+          <ng-container matColumnDef="submittedAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Submitted Date</th>
+            <td mat-cell *matCellDef="let submission">
+              {{ submission.submittedAt | date:'medium' }}
+            </td>
+          </ng-container>
+
+          <!-- Submitter Column -->
+          <ng-container matColumnDef="submittedBy">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Submitted By</th>
+            <td mat-cell *matCellDef="let submission">
+              {{ submission.submittedBy }}
+            </td>
+          </ng-container>
+
+          <!-- Dynamic Form Fields -->
+          <ng-container *ngFor="let field of formFields" [matColumnDef]="field.key">
+            <th mat-header-cell *matHeaderCellDef>{{ field.label }}</th>
+            <td mat-cell *matCellDef="let submission">
+              <span class="field-value">{{ submission.values[field.key] || '-' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let submission">
+              <button 
+                mat-icon-button 
+                (click)="viewSubmissionDetails(submission.id)"
+                matTooltip="View Details">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                (click)="deleteSubmission(submission.id)"
+                matTooltip="Delete Submission"
+                class="delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- No data message -->
+        <div *ngIf="displayedSubmissions.length === 0" class="no-data">
+          <mat-icon>inbox</mat-icon>
+          <p>No submissions found</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <mat-paginator 
+        [length]="totalElements"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

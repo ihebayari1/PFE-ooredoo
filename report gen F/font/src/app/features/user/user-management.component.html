@@ -1,0 +1,477 @@
+<div class="user-management-container">
+  <!-- Enhanced Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button mat-icon-button routerLink="/admin" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="header-title-section">
+          <mat-icon class="page-icon">people</mat-icon>
+          <div class="title-content">
+            <h1>User Management</h1>
+            <p class="subtitle">Manage system users, roles, and permissions</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="stats-summary">
+          <div class="stat-item">
+            <span class="stat-number">{{ users.length }}</span>
+            <span class="stat-label">Total Users</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getActiveUsersCount() }}</span>
+            <span class="stat-label">Active</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ selectedUsers.size }}</span>
+            <span class="stat-label">Selected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Toolbar -->
+  <div class="management-toolbar">
+    <div class="toolbar-left">
+      <!-- Enhanced Search Bar -->
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search users</mat-label>
+        <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" 
+               placeholder="Search by name, email, or role...">
+        <mat-icon matSuffix>search</mat-icon>
+        <button *ngIf="searchQuery" matSuffix mat-icon-button (click)="clearSearch()" matTooltip="Clear search">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+    
+    <div class="toolbar-right">
+      <!-- Bulk Actions Dropdown -->
+      <button mat-stroked-button [matMenuTriggerFor]="bulkActionsMenu" 
+              [disabled]="selectedUsers.size === 0" class="bulk-actions-btn">
+        <mat-icon>more_vert</mat-icon>
+        Bulk Actions ({{selectedUsers.size}})
+      </button>
+      <mat-menu #bulkActionsMenu="matMenu">
+        <button mat-menu-item (click)="onBulkUpdateStatus(true)" [disabled]="selectedUsers.size === 0">
+          <mat-icon>check_circle</mat-icon>
+          <span>Enable Selected</span>
+        </button>
+        <button mat-menu-item (click)="onBulkUpdateStatus(false)" [disabled]="selectedUsers.size === 0">
+          <mat-icon>block</mat-icon>
+          <span>Disable Selected</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="onBulkDelete()" [disabled]="selectedUsers.size === 0" class="danger-action">
+          <mat-icon>delete</mat-icon>
+          <span>Delete Selected</span>
+        </button>
+      </mat-menu>
+      
+      <!-- Create User Button -->
+      <button mat-raised-button color="primary" (click)="onCreateUser()" class="create-btn">
+        <mat-icon>person_add</mat-icon>
+        Create User
+      </button>
+    </div>
+  </div>
+
+  <div class="content-container">
+    <!-- Enhanced User List -->
+    <div class="user-list-container" *ngIf="!showCreateForm && !showEditForm">
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="isLoading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading users...</p>
+      </div>
+
+      <!-- Users Grid View -->
+      <div class="users-grid" *ngIf="!isLoading && filteredUsers.length > 0">
+        <mat-card *ngFor="let user of filteredUsers" class="user-card" 
+                  [class.selected]="isUserSelected(user.id!)"
+                  [class.disabled]="!user.enabled">
+          <mat-card-content>
+            <!-- User Header -->
+            <div class="user-header">
+              <div class="user-selection">
+                <mat-checkbox 
+                  [checked]="isUserSelected(user.id!)"
+                  (change)="onSelectUser(user.id!, $event.checked)"
+                  class="user-checkbox">
+                </mat-checkbox>
+              </div>
+              
+              <div class="user-avatar">
+                <mat-icon class="avatar-icon">person</mat-icon>
+              </div>
+              
+              <div class="user-info">
+                <h3 class="user-name">{{ getUserName(user) }}</h3>
+                <p class="user-email">{{ user.email }}</p>
+                <div class="user-type-badge">
+                  <mat-chip [color]="user.userType === 'POS' ? 'accent' : 'primary'" class="type-chip">
+                    {{ user.userType }}
+                  </mat-chip>
+                </div>
+              </div>
+              
+              <div class="user-status">
+                <mat-chip [color]="getUserStatusColor(user)" class="status-chip">
+                  {{ getUserStatus(user) }}
+                </mat-chip>
+              </div>
+            </div>
+
+            <!-- User Details -->
+            <div class="user-details">
+              <div class="detail-row">
+                <mat-icon class="detail-icon">business</mat-icon>
+                <span class="detail-label">Enterprise:</span>
+                <span class="detail-value">{{ getEnterpriseName(user) }}</span>
+              </div>
+              
+              <div class="detail-row">
+                <mat-icon class="detail-icon">store</mat-icon>
+                <span class="detail-label">POS:</span>
+                <span class="detail-value">{{ getPOSName(user) }}</span>
+              </div>
+              
+              <div class="detail-row">
+                <mat-icon class="detail-icon">security</mat-icon>
+                <span class="detail-label">Roles:</span>
+                <div class="roles-container">
+                  <mat-chip *ngIf="user.role" class="role-chip">
+                    {{ user.role.name }}
+                    <button mat-icon-button (click)="onRemoveRole(user, user.role!.id!)" class="remove-role-btn">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </mat-chip>
+                  <mat-chip *ngIf="getRoleNames(user).length === 0" class="no-roles-chip">
+                    No Roles
+                  </mat-chip>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Actions -->
+            <div class="user-actions">
+              <div class="action-buttons">
+                <button mat-icon-button [matMenuTriggerFor]="roleMenu" matTooltip="Add Role">
+                  <mat-icon>add</mat-icon>
+                </button>
+                <mat-menu #roleMenu="matMenu">
+                  <button mat-menu-item *ngFor="let role of getUserAvailableRoles(user)" 
+                          (click)="onAssignRole(user, role.id!)">
+                    <mat-icon>security</mat-icon>
+                    <span>{{ role.name }}</span>
+                  </button>
+                </mat-menu>
+                
+                <button mat-icon-button (click)="onEditUser(user)" matTooltip="Edit User">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu" matTooltip="More Actions">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onDeleteUser(user)" class="danger-action">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading && filteredUsers.length === 0">
+        <mat-icon class="empty-icon">people_outline</mat-icon>
+        <h3>{{ searchQuery ? 'No users found' : 'No users yet' }}</h3>
+        <p>{{ searchQuery ? 'Try adjusting your search criteria' : 'Create your first user to get started' }}</p>
+        <button mat-raised-button color="primary" (click)="onCreateUser()" *ngIf="!searchQuery">
+          <mat-icon>person_add</mat-icon>
+          Create First User
+        </button>
+      </div>
+    </div>
+
+    <!-- Enhanced Create/Edit Form -->
+    <div class="form-container" *ngIf="showCreateForm || showEditForm">
+      <mat-card class="form-card">
+        <mat-card-header>
+          <div class="form-header">
+            <div class="form-title-section">
+              <mat-icon class="form-icon">{{ showCreateForm ? 'person_add' : 'edit' }}</mat-icon>
+              <div class="form-title-content">
+                <h2>{{ showCreateForm ? 'Create New User' : 'Edit User' }}</h2>
+                <p>{{ showCreateForm ? 'Add a new system user with roles and permissions' : 'Update user details and assignments' }}</p>
+              </div>
+            </div>
+            <button mat-icon-button (click)="cancelForm()" class="close-btn">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="userForm" (ngSubmit)="onSubmitForm()" class="user-form">
+            <mat-tab-group [(selectedIndex)]="selectedTabIndex" class="form-tabs">
+              <!-- Basic Information Tab -->
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <mat-icon>person</mat-icon>
+                  Basic Information
+                </ng-template>
+                
+            <div class="tab-content">
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon class="section-icon">person</mat-icon>
+                  Personal Details
+                </h3>
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="enhanced-input half-width">
+                    <mat-label>First Name</mat-label>
+                    <input matInput formControlName="first_Name" placeholder="Enter first name" required>
+                    <mat-icon matPrefix class="input-icon">person</mat-icon>
+                    <mat-error *ngIf="userForm.get('first_Name')?.hasError('required')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      First name is required
+                    </mat-error>
+                    <mat-error *ngIf="userForm.get('first_Name')?.hasError('minlength')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      First name must be at least 2 characters
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="enhanced-input half-width">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput formControlName="last_Name" placeholder="Enter last name" required>
+                    <mat-icon matPrefix class="input-icon">person</mat-icon>
+                    <mat-error *ngIf="userForm.get('last_Name')?.hasError('required')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      Last name is required
+                    </mat-error>
+                    <mat-error *ngIf="userForm.get('last_Name')?.hasError('minlength')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      Last name must be at least 2 characters
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="enhanced-input full-width">
+                    <mat-label>Email Address</mat-label>
+                    <input matInput formControlName="email" type="email" placeholder="Enter email address" required>
+                    <mat-icon matPrefix class="input-icon">email</mat-icon>
+                    <mat-error *ngIf="userForm.get('email')?.hasError('required')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      Email is required
+                    </mat-error>
+                    <mat-error *ngIf="userForm.get('email')?.hasError('email')">
+                      <mat-icon class="error-icon">error</mat-icon>
+                      Please enter a valid email address
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="enhanced-input half-width">
+                    <mat-label>Birth Date</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="birthdate" placeholder="Select birth date">
+                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <mat-icon matPrefix class="input-icon">calendar_today</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="enhanced-input half-width">
+                    <mat-label>User Type</mat-label>
+                    <mat-select formControlName="userType" required placeholder="Select user type">
+                      <mat-option *ngFor="let type of userTypes" [value]="type">
+                        {{ type }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matPrefix class="input-icon">category</mat-icon>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon class="section-icon">settings</mat-icon>
+                  Account Settings
+                </h3>
+                <div class="form-row">
+                  <div class="checkbox-group">
+                    <mat-checkbox formControlName="enabled" class="enhanced-checkbox">
+                      <div class="checkbox-content">
+                        <div class="checkbox-header">
+                          <mat-icon class="checkbox-icon">check_circle</mat-icon>
+                          <div class="checkbox-title">Account Enabled</div>
+                        </div>
+                        <div class="checkbox-description">User can log in and access the system</div>
+                      </div>
+                    </mat-checkbox>
+                    
+                    <mat-checkbox formControlName="accountLocked" class="enhanced-checkbox">
+                      <div class="checkbox-content">
+                        <div class="checkbox-header">
+                          <mat-icon class="checkbox-icon">lock</mat-icon>
+                          <div class="checkbox-title">Account Locked</div>
+                        </div>
+                        <div class="checkbox-description">Prevent user from logging in</div>
+                      </div>
+                    </mat-checkbox>
+                  </div>
+                </div>
+              </div>
+            </div>
+              </mat-tab>
+
+              <!-- Organization Tab -->
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <mat-icon>business</mat-icon>
+                  Organization
+                </ng-template>
+                
+                <div class="tab-content">
+                  <div class="form-section">
+                    <h3 class="section-title">
+                      <mat-icon class="section-icon">business</mat-icon>
+                      Enterprise Assignment
+                    </h3>
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="enhanced-input full-width">
+                        <mat-label>Enterprise</mat-label>
+                        <mat-select formControlName="enterpriseId" placeholder="Select enterprise">
+                          <mat-option [value]="null">No Enterprise</mat-option>
+                          <mat-option *ngFor="let enterprise of enterprises" [value]="enterprise.id">
+                            {{ enterprise.enterpriseName }}
+                          </mat-option>
+                        </mat-select>
+                        <mat-icon matPrefix class="input-icon">business</mat-icon>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="enhanced-input full-width">
+                        <mat-label>POS Code</mat-label>
+                        <input matInput formControlName="posCode" placeholder="Enter POS code">
+                        <mat-icon matPrefix class="input-icon">store</mat-icon>
+                        <mat-hint>Optional: Link user to a specific Point of Sale</mat-hint>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+
+              <!-- Roles Tab -->
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <mat-icon>security</mat-icon>
+                  Roles & Permissions
+                </ng-template>
+                
+                <div class="tab-content">
+                  <div class="form-section">
+                    <h3 class="section-title">
+                      <mat-icon class="section-icon">security</mat-icon>
+                      Role Assignment
+                    </h3>
+                    <p class="section-description">Select the roles to assign to this user. Roles determine what actions the user can perform in the system.</p>
+                    
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="enhanced-input full-width">
+                        <mat-label>Assign Roles</mat-label>
+                        <mat-select formControlName="roleId" placeholder="Select role to assign">
+                          <mat-option *ngFor="let role of roles" [value]="role.id">
+                            {{ role.name }}
+                          </mat-option>
+                        </mat-select>
+                        <mat-icon matPrefix class="input-icon">security</mat-icon>
+                        <mat-hint>Select a role to assign to this user</mat-hint>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="selected-roles" *ngIf="userForm.get('roleId')?.value">
+                      <h4 class="roles-summary-title">
+                        <mat-icon class="summary-icon">check_circle</mat-icon>
+                        Selected Role
+                      </h4>
+                      <div class="roles-preview">
+                        <div class="role-preview-card">
+                          <mat-icon class="role-preview-icon">security</mat-icon>
+                          <span class="role-preview-name">{{ getRoleName(userForm.get('roleId')?.value) }}</span>
+                          <button mat-icon-button (click)="userForm.get('roleId')?.setValue(null)" class="remove-role-btn">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h3 class="section-title">
+                      <mat-icon class="section-icon">vpn_key</mat-icon>
+                      PIN Authentication
+                    </h3>
+                    <p class="section-description">Set a 4-digit PIN code for additional authentication security. This PIN can be used for quick access verification.</p>
+                    
+                    <div class="form-row">
+                      <mat-form-field appearance="outline" class="enhanced-input half-width">
+                        <mat-label>PIN Code</mat-label>
+                        <input matInput formControlName="pin" [type]="hidePin ? 'password' : 'text'" placeholder="Enter 4-digit PIN" maxlength="4" pattern="[0-9]*">
+                        <mat-icon matPrefix class="input-icon">vpn_key</mat-icon>
+                        <button 
+                          mat-icon-button 
+                          matSuffix 
+                          type="button"
+                          (click)="togglePinVisibility()"
+                          [attr.aria-label]="'Hide PIN'"
+                          [attr.aria-pressed]="hidePin">
+                          <mat-icon>{{ hidePin ? 'visibility_off' : 'visibility' }}</mat-icon>
+                        </button>
+                        <mat-hint>4 digits only (optional)</mat-hint>
+                        <mat-error *ngIf="userForm.get('pin')?.hasError('minlength')">
+                          <mat-icon class="error-icon">error</mat-icon>
+                          PIN must be exactly 4 digits
+                        </mat-error>
+                        <mat-error *ngIf="userForm.get('pin')?.hasError('maxlength')">
+                          <mat-icon class="error-icon">error</mat-icon>
+                          PIN must be exactly 4 digits
+                        </mat-error>
+                        <mat-error *ngIf="userForm.get('pin')?.hasError('pattern')">
+                          <mat-icon class="error-icon">error</mat-icon>
+                          PIN must contain only numbers
+                        </mat-error>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+            </mat-tab-group>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="cancelForm()" class="cancel-btn">
+                <mat-icon>close</mat-icon>
+                Cancel
+              </button>
+              <button mat-raised-button color="primary" type="submit" [disabled]="userForm.invalid" class="submit-btn">
+                <mat-icon>{{ showCreateForm ? 'person_add' : 'save' }}</mat-icon>
+                {{ showCreateForm ? 'Create User' : 'Update User' }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

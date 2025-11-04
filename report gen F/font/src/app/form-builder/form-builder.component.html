@@ -1,0 +1,220 @@
+<div class="form-builder-container">
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-spinner">
+      <mat-icon>hourglass_empty</mat-icon>
+      <p>Loading form builder...</p>
+    </div>
+  </div>
+
+  <!-- Form Builder Content -->
+  <div *ngIf="!isLoading" class="form-builder-content">
+    <!-- Form Header -->
+    <div class="form-header">
+      <div class="header-left">
+        <button mat-icon-button (click)="goBack()" class="back-button" matTooltip="Go back to forms list">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="form-title-section">
+          <h2>{{ formData ? 'Edit Form' : 'Create Form' }}</h2>
+          <p *ngIf="formData">Form ID: {{ formId }}</p>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button mat-stroked-button (click)="openPreviewDialog()" class="preview-button" matTooltip="Preview your form">
+          <mat-icon>visibility</mat-icon>
+          Preview
+        </button>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="saveForm()" 
+          class="save-button"
+          [disabled]="isSaving || formBuilderForm.invalid">
+          <mat-icon *ngIf="isSaving">hourglass_empty</mat-icon>
+          <mat-icon *ngIf="!isSaving">save</mat-icon>
+          {{ isSaving ? 'Saving...' : 'Save Form' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Form Builder Area -->
+    <div class="form-builder-area">
+      <!-- Form Metadata Section -->
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>description</mat-icon>
+            Form Details
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="formBuilderForm">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Form Name</mat-label>
+              <input matInput formControlName="name" placeholder="Enter form name">
+              <mat-icon matPrefix>text_fields</mat-icon>
+              <mat-error *ngIf="formBuilderForm.get('name')?.hasError('required')">
+                Form name is required
+              </mat-error>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Form Description</mat-label>
+              <textarea 
+                matInput 
+                formControlName="description" 
+                placeholder="Enter form description" 
+                rows="4">
+              </textarea>
+              <mat-icon matPrefix>info</mat-icon>
+              <mat-error *ngIf="formBuilderForm.get('description')?.hasError('required')">
+                Form description is required
+              </mat-error>
+            </mat-form-field>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Component Builder Section -->
+      <div class="component-builder" *ngIf="formId">
+        <div class="builder-layout">
+          <!-- Component Palette -->
+          <div class="component-palette">
+            <h3>Component Palette</h3>
+            <div 
+              cdkDropList 
+              #paletteList="cdkDropList"
+              [cdkDropListData]="paletteItems"
+              [cdkDropListConnectedTo]="[canvasList]"
+              class="palette-items"
+              cdkDropListOrientation="vertical">
+              
+              <div 
+                *ngFor="let item of paletteItems" 
+                cdkDrag 
+                [cdkDragData]="item"
+                class="palette-item"
+                matTooltip="{{item.description}}">
+                <div class="palette-item-content">
+                  <span class="palette-icon">{{item.icon}}</span>
+                  <span class="palette-label">{{item.label}}</span>
+                </div>
+                <mat-icon class="drag-handle" cdkDragHandle>drag_indicator</mat-icon>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Canvas -->
+          <div class="form-canvas">
+            <h3>Form Canvas</h3>
+            <div 
+              cdkDropList 
+              #canvasList="cdkDropList"
+              [cdkDropListData]="formComponents"
+              [cdkDropListConnectedTo]="[paletteList]"
+              class="canvas-area"
+              cdkDropListOrientation="vertical"
+              (cdkDropListDropped)="onCanvasDrop($event)">
+              
+              <!-- Empty State -->
+              <div *ngIf="formComponents.length === 0" class="empty-canvas">
+                <mat-icon>widgets</mat-icon>
+                <p>Drag components here to start building your form</p>
+              </div>
+
+              <!-- Form Components -->
+              <div 
+                *ngFor="let component of formComponents; let i = index" 
+                cdkDrag 
+                [cdkDragData]="component"
+                class="canvas-component"
+                [class.dragging]="component.isDragging">
+                
+                <div class="component-header">
+                  <div class="component-info">
+                    <span class="component-number">{{i + 1}}.</span>
+                    <span class="component-icon">{{getComponentIcon(component.elementType)}}</span>
+                    <span class="component-label">{{component.label}}</span>
+                    <mat-icon *ngIf="component.required" class="required-indicator">check_circle</mat-icon>
+                  </div>
+                  
+                  <button 
+                    mat-icon-button 
+                    [matMenuTriggerFor]="componentMenu"
+                    class="component-menu-trigger">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  
+                  <mat-menu #componentMenu="matMenu">
+                    <button mat-menu-item (click)="editComponent(component)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Edit</span>
+                    </button>
+                    <button mat-menu-item (click)="duplicateComponent(component)">
+                      <mat-icon>content_copy</mat-icon>
+                      <span>Duplicate</span>
+                    </button>
+                    <button mat-menu-item (click)="deleteComponent(component)" class="delete-action">
+                      <mat-icon>delete</mat-icon>
+                      <span>Delete</span>
+                    </button>
+                  </mat-menu>
+                </div>
+
+                <div class="component-preview">
+                  <!-- Component Preview based on type -->
+                  <div *ngIf="component.elementType === 'TEXT'" class="preview-text">
+                    <input type="text" placeholder="Text input preview" disabled>
+                  </div>
+                  <div *ngIf="component.elementType === 'EMAIL'" class="preview-email">
+                    <input type="email" placeholder="Email input preview" disabled>
+                  </div>
+                  <div *ngIf="component.elementType === 'NUMBER'" class="preview-number">
+                    <input type="number" placeholder="Number input preview" disabled>
+                  </div>
+                  <div *ngIf="component.elementType === 'TEXTAREA'" class="preview-textarea">
+                    <textarea placeholder="Textarea preview" disabled></textarea>
+                  </div>
+                  <div *ngIf="component.elementType === 'DROPDOWN'" class="preview-dropdown">
+                    <select disabled>
+                      <option>Dropdown preview</option>
+                    </select>
+                  </div>
+                  <div *ngIf="component.elementType === 'RADIO'" class="preview-radio">
+                    <label><input type="radio" disabled> Radio option</label>
+                  </div>
+                  <div *ngIf="component.elementType === 'CHECKBOX'" class="preview-checkbox">
+                    <label class="checkbox-group-label">{{component.label}}</label>
+                    <div class="checkbox-options">
+                      <label *ngFor="let option of component.options" class="checkbox-option">
+                        <input type="checkbox" disabled> {{option.label}}
+                      </label>
+                    </div>
+                  </div>
+                  <div *ngIf="component.elementType === 'DATE'" class="preview-date">
+                    <input type="date" disabled>
+                  </div>
+                  <div *ngIf="component.elementType === 'FILE_UPLOAD'" class="preview-file-upload">
+                    <mat-icon>attach_file</mat-icon>
+                    <span>{{ component.label || 'File Upload' }}</span>
+                    <p class="file-hint">Users can upload files here</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Add Component Button -->
+              <div class="add-component-section">
+                <button mat-stroked-button class="add-component-btn">
+                  <mat-icon>add</mat-icon>
+                  Add Component
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

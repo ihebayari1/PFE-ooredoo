@@ -1,0 +1,316 @@
+<div class="enterprise-management-container">
+  <mat-toolbar class="management-toolbar">
+    <button mat-icon-button routerLink="/admin" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>Enterprise Management</span>
+    <span class="spacer"></span>
+    
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" *ngIf="showBulkActions">
+      <span class="selection-count">{{ selectedEnterprises.size }} selected</span>
+      <button mat-button (click)="onBulkAssignUsers()" matTooltip="Assign users to selected enterprises">
+        <mat-icon>person_add</mat-icon>
+        Assign Users
+      </button>
+      <button mat-button color="warn" (click)="onBulkDeleteEnterprises()" matTooltip="Delete selected enterprises">
+        <mat-icon>delete</mat-icon>
+        Delete
+      </button>
+      <button mat-button (click)="clearSelection()">
+        <mat-icon>clear</mat-icon>
+        Clear
+      </button>
+    </div>
+    
+    <button mat-raised-button color="primary" (click)="onCreateEnterprise()">
+      <mat-icon>add</mat-icon>
+      Create Enterprise
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <!-- Enterprise List -->
+    <mat-card class="enterprise-list-card" *ngIf="!showCreateForm && !showEditForm">
+      <mat-card-header>
+        <mat-card-title>Enterprises</mat-card-title>
+        <mat-card-subtitle>Manage enterprise organizations</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="loading-container" *ngIf="isLoading">
+          <mat-spinner></mat-spinner>
+          <p>Loading enterprises...</p>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+          <table mat-table [dataSource]="enterprises" class="enterprise-table">
+            <!-- Selection Column -->
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef>
+                <mat-checkbox 
+                  [checked]="isAllEnterprisesSelected()"
+                  [indeterminate]="selectedEnterprises.size > 0 && selectedEnterprises.size < enterprises.length"
+                  (change)="toggleAllEnterprisesSelection()">
+                </mat-checkbox>
+              </th>
+              <td mat-cell *matCellDef="let enterprise">
+                <mat-checkbox 
+                  [checked]="isEnterpriseSelected(enterprise)"
+                  (change)="toggleEnterpriseSelection(enterprise)">
+                </mat-checkbox>
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Enterprise Name</th>
+              <td mat-cell *matCellDef="let enterprise">
+                <div class="enterprise-info">
+                  <div class="enterprise-name">{{ enterprise.enterpriseName }}</div>
+                  <div class="enterprise-colors" *ngIf="enterprise.primaryColor || enterprise.secondaryColor">
+                    <span class="color-chip" [style.background-color]="enterprise.primaryColor"></span>
+                    <span class="color-chip" [style.background-color]="enterprise.secondaryColor"></span>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Manager Column -->
+            <ng-container matColumnDef="manager">
+              <th mat-header-cell *matHeaderCellDef>Manager</th>
+              <td mat-cell *matCellDef="let enterprise">
+                <div class="manager-info">
+                  <mat-icon class="manager-icon">person</mat-icon>
+                  <span>{{ getManagerName(enterprise) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Users Count Column -->
+            <ng-container matColumnDef="usersCount">
+              <th mat-header-cell *matHeaderCellDef>Users</th>
+              <td mat-cell *matCellDef="let enterprise">
+                <mat-chip-set>
+                  <mat-chip>{{ getUsersCount(enterprise) }} users</mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="createdDate">
+              <th mat-header-cell *matHeaderCellDef>Created</th>
+              <td mat-cell *matCellDef="let enterprise">
+                {{ formatDate(enterprise.creation_Date) }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let enterprise">
+                <div class="action-buttons">
+                  <button mat-icon-button 
+                          (click)="onAssignUsersToEnterprise(enterprise)" 
+                          matTooltip="Assign users to enterprise"
+                          color="primary">
+                    <mat-icon>person_add</mat-icon>
+                  </button>
+                  <button mat-icon-button 
+                          (click)="onRemoveUsersFromEnterprise(enterprise)" 
+                          matTooltip="Remove users from enterprise"
+                          color="warn">
+                    <mat-icon>person_remove</mat-icon>
+                  </button>
+                  <button mat-icon-button 
+                          (click)="onViewEnterpriseUsers(enterprise)" 
+                          matTooltip="View enterprise users">
+                    <mat-icon>people</mat-icon>
+                  </button>
+                  <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #actionMenu="matMenu">
+                    <button mat-menu-item (click)="onEditEnterprise(enterprise)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Edit</span>
+                    </button>
+                    <button mat-menu-item (click)="onDeleteEnterprise(enterprise)">
+                      <mat-icon>delete</mat-icon>
+                      <span>Delete</span>
+                    </button>
+                  </mat-menu>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="enterprises.length === 0">
+            <mat-icon>business</mat-icon>
+            <p>No enterprises found</p>
+            <button mat-raised-button color="primary" (click)="onCreateEnterprise()">
+              Create First Enterprise
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Create/Edit Form -->
+    <mat-card class="form-card" *ngIf="showCreateForm || showEditForm">
+      <mat-card-header>
+        <mat-card-title>{{ showCreateForm ? 'Create Enterprise' : 'Edit Enterprise' }}</mat-card-title>
+        <mat-card-subtitle>{{ showCreateForm ? 'Add a new enterprise organization' : 'Update enterprise details' }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="enterpriseForm" (ngSubmit)="onSubmitForm()" class="enterprise-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Enterprise Name</mat-label>
+              <input matInput formControlName="enterpriseName" placeholder="Enter enterprise name" required>
+              <mat-error *ngIf="isFieldInvalid('enterpriseName')">
+                {{ getFieldError('enterpriseName') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Logo URL</mat-label>
+              <input matInput formControlName="logoUrl" placeholder="Enter logo URL (optional)">
+              <mat-error *ngIf="isFieldInvalid('logoUrl')">
+                {{ getFieldError('logoUrl') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Primary Color</mat-label>
+              <input matInput formControlName="primaryColor" type="color">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Secondary Color</mat-label>
+              <input matInput formControlName="secondaryColor" type="color">
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Manager</mat-label>
+              <mat-select formControlName="managerId">
+                <mat-option [value]="null">No Manager</mat-option>
+                <mat-option *ngFor="let user of enterpriseAdmins" [value]="user.id">
+                  {{ user.first_Name }} {{ user.last_Name }} ({{ user.email }})
+                </mat-option>
+                <mat-option *ngIf="enterpriseAdmins.length === 0" disabled>
+                  No users with ENTERPRISE_ADMIN role found
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="enterpriseForm.invalid">
+              {{ showCreateForm ? 'Create Enterprise' : 'Update Enterprise' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Enterprise Details -->
+    <mat-card class="details-card" *ngIf="!showCreateForm && !showEditForm && enterprises.length > 0">
+      <mat-card-header>
+        <mat-card-title>Enterprise Details</mat-card-title>
+        <mat-card-subtitle>View detailed information and users for each enterprise</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <mat-accordion multi="true">
+          <mat-expansion-panel *ngFor="let enterprise of enterprises" (opened)="loadUsersForEnterprise(enterprise)">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon class="enterprise-icon">business</mat-icon>
+                {{ enterprise.enterpriseName }}
+              </mat-panel-title>
+              <mat-panel-description>
+                {{ getUsersCount(enterprise) }} users • Manager: {{ getManagerName(enterprise) }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            
+            <div class="enterprise-details-content">
+              <div class="enterprise-info-section">
+                <h4>Enterprise Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <mat-icon>business</mat-icon>
+                    <span><strong>Name:</strong> {{ enterprise.enterpriseName }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>person</mat-icon>
+                    <span><strong>Manager:</strong> {{ getManagerName(enterprise) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>people</mat-icon>
+                    <span><strong>Users:</strong> {{ getUsersCount(enterprise) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span><strong>Created:</strong> {{ formatDate(enterprise.creation_Date) }}</span>
+                  </div>
+                  <div class="info-item" *ngIf="enterprise.primaryColor || enterprise.secondaryColor">
+                    <mat-icon>palette</mat-icon>
+                    <span>
+                      <strong>Colors:</strong>
+                      <span class="color-chip" [style.background-color]="enterprise.primaryColor" *ngIf="enterprise.primaryColor"></span>
+                      <span class="color-chip" [style.background-color]="enterprise.secondaryColor" *ngIf="enterprise.secondaryColor"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="users-section" *ngIf="enterprise.usersInEnterprise && enterprise.usersInEnterprise.length > 0">
+                <h4>Users in this Enterprise</h4>
+                <div class="users-grid">
+                  <mat-card class="user-card" *ngFor="let user of enterprise.usersInEnterprise">
+                    <mat-card-content>
+                      <div class="user-info">
+                        <mat-icon class="user-avatar-icon">person</mat-icon>
+                        <div class="user-details">
+                          <div class="user-name">{{ user.first_Name }} {{ user.last_Name }}</div>
+                          <div class="user-email">{{ user.email }}</div>
+                          <div class="user-role" *ngIf="user.role">
+                            <mat-chip class="role-chip">{{ user.role.name }}</mat-chip>
+                          </div>
+                          <div class="user-status" *ngIf="user.enabled !== undefined">
+                            <mat-chip [class]="user.enabled ? 'status-active' : 'status-inactive'">
+                              {{ user.enabled ? 'Active' : 'Inactive' }}
+                            </mat-chip>
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+
+              <div class="no-users" *ngIf="!enterprise.usersInEnterprise || enterprise.usersInEnterprise.length === 0">
+                <mat-icon>people</mat-icon>
+                <p>No users assigned to this enterprise</p>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

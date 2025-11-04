@@ -1,0 +1,109 @@
+<div class="register-container">
+  <div class="register-form">
+    <div class="register-header">
+      <div class="logo">O</div>
+      <h2>Create Account</h2>
+      <p class="subtitle">Sign up for your OOREDOO Report Builder account</p>
+    </div>
+    
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form-content">
+      <mat-form-field appearance="outline">
+        <mat-label>First Name</mat-label>
+        <input matInput formControlName="firstname" placeholder="Enter your first name" />
+        <mat-icon matSuffix>person</mat-icon>
+        <mat-error *ngIf="registerForm.get('firstname')?.invalid && registerForm.get('firstname')?.touched">
+          First name is required (min 2 characters)
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Last Name</mat-label>
+        <input matInput formControlName="lastname" placeholder="Enter your last name" />
+        <mat-icon matSuffix>person_outline</mat-icon>
+        <mat-error *ngIf="registerForm.get('lastname')?.invalid && registerForm.get('lastname')?.touched">
+          Last name is required (min 2 characters)
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email Address</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="Enter your email" />
+        <mat-icon matSuffix>email</mat-icon>
+        <mat-error *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+          Please enter a valid email address
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input 
+          matInput 
+          [type]="hidePassword ? 'password' : 'text'" 
+          formControlName="password" 
+          placeholder="Enter your password" 
+        />
+        <button 
+          mat-icon-button 
+          matSuffix 
+          type="button"
+          (click)="togglePasswordVisibility()"
+          [attr.aria-label]="'Hide password'"
+          [attr.aria-pressed]="hidePassword">
+          <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+          Password must be at least 8 characters
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>PIN (4 digits)</mat-label>
+        <input 
+          matInput 
+          [type]="hidePin ? 'password' : 'text'" 
+          formControlName="pinHash" 
+          maxlength="4" 
+          placeholder="Enter 4-digit PIN" 
+        />
+        <button 
+          mat-icon-button 
+          matSuffix 
+          type="button"
+          (click)="togglePinVisibility()"
+          [attr.aria-label]="'Hide PIN'"
+          [attr.aria-pressed]="hidePin">
+          <mat-icon>{{ hidePin ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('pinHash')?.invalid && registerForm.get('pinHash')?.touched">
+          4-digit PIN is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>User Type</mat-label>
+        <mat-select formControlName="userType">
+          <mat-option *ngFor="let userType of userTypes" [value]="userType">
+            {{ userType }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matSuffix>badge</mat-icon>
+        <mat-error *ngIf="registerForm.get('userType')?.invalid && registerForm.get('userType')?.touched">
+          User type is required
+        </mat-error>
+      </mat-form-field>
+
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        class="register-button"
+        [disabled]="isSubmitting || registerForm.invalid">
+        {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
+      </button>
+    </form>
+    
+    <div class="login-link">
+      <p>Already have an account? <a routerLink="/login">Sign in here</a></p>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,163 @@
+<div class="admin-dashboard-container">
+  <!-- Enhanced Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-title-section">
+          <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+          <div class="title-content">
+            <h1>Admin Dashboard</h1>
+            <p class="subtitle">System administration and management center</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="admin-badge">
+          <mat-icon>verified_user</mat-icon>
+          <span>System Administrator</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- Enhanced Quick Stats Overview -->
+    <div class="stats-overview-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon class="title-icon">analytics</mat-icon>
+          System Overview
+        </h2>
+        <p class="section-subtitle">Current system statistics and performance metrics</p>
+      </div>
+      
+      <div class="stats-grid" *ngIf="!isLoading">
+        <div class="stat-card" *ngFor="let stat of stats | keyvalue" [class]="'stat-' + stat.key">
+          <div class="stat-icon">
+            <mat-icon>{{ getStatIcon(stat.key) }}</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ stat.value }}</div>
+            <div class="stat-label">{{ getStatLabel(stat.key) }}</div>
+            <div class="stat-trend">
+              <mat-icon class="trend-icon">trending_up</mat-icon>
+              <span class="trend-text">+12%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loading-container" *ngIf="isLoading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading system statistics...</p>
+      </div>
+    </div>
+
+    <!-- Enhanced Management Modules Grid -->
+    <div class="management-modules-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon class="title-icon">settings</mat-icon>
+          System Management
+        </h2>
+        <p class="section-subtitle">Access all management modules and administrative functions</p>
+      </div>
+      
+      <div class="modules-grid">
+        <div class="module-card" 
+             *ngFor="let module of managementModules" 
+             [class]="'module-' + module.color"
+             [routerLink]="module.route">
+          <div class="module-header">
+            <div class="module-icon">
+              <mat-icon>{{ module.icon }}</mat-icon>
+            </div>
+            <div class="module-stats">
+              <div class="count-badge">{{ getStatsForModule(module.stats) }}</div>
+            </div>
+          </div>
+          
+          <div class="module-content">
+            <h3 class="module-title">{{ module.title }}</h3>
+            <p class="module-description">{{ module.description }}</p>
+          </div>
+          
+          <div class="module-footer">
+            <div class="module-actions">
+              <button mat-raised-button [color]="module.color" class="module-button">
+                <mat-icon>arrow_forward</mat-icon>
+                Manage
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Quick Actions -->
+    <div class="quick-actions-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon class="title-icon">flash_on</mat-icon>
+          Quick Actions
+        </h2>
+        <p class="section-subtitle">Common administrative tasks and shortcuts</p>
+      </div>
+      
+      <div class="quick-actions-grid">
+        <div class="action-card" routerLink="/management/users">
+          <div class="action-icon">
+            <mat-icon>person_add</mat-icon>
+          </div>
+          <div class="action-content">
+            <h4>Create User</h4>
+            <p>Add new system users</p>
+          </div>
+          <div class="action-arrow">
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+        </div>
+        
+        <div class="action-card" routerLink="/management/enterprises">
+          <div class="action-icon">
+            <mat-icon>business</mat-icon>
+          </div>
+          <div class="action-content">
+            <h4>Create Enterprise</h4>
+            <p>Add new organizations</p>
+          </div>
+          <div class="action-arrow">
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+        </div>
+        
+        <div class="action-card" routerLink="/management/roles">
+          <div class="action-icon">
+            <mat-icon>security</mat-icon>
+          </div>
+          <div class="action-content">
+            <h4>Manage Roles</h4>
+            <p>Configure permissions</p>
+          </div>
+          <div class="action-arrow">
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+        </div>
+        
+        <div class="action-card" routerLink="/forms">
+          <div class="action-icon">
+            <mat-icon>add_box</mat-icon>
+          </div>
+          <div class="action-content">
+            <h4>Create Form</h4>
+            <p>Build new forms</p>
+          </div>
+          <div class="action-arrow">
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

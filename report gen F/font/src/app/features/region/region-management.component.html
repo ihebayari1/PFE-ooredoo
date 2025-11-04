@@ -1,0 +1,221 @@
+<div class="region-management-container">
+  <mat-toolbar class="management-toolbar">
+    <button mat-icon-button routerLink="/admin" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>Region Management</span>
+    <span class="spacer"></span>
+    <button mat-raised-button color="primary" (click)="onCreateRegion()">
+      <mat-icon>add_location</mat-icon>
+      Create Region
+    </button>
+  </mat-toolbar>
+
+  <div class="content-container">
+    <!-- Region List -->
+    <mat-card class="region-list-card" *ngIf="!showCreateForm && !showEditForm">
+      <mat-card-header>
+        <mat-card-title>Regions</mat-card-title>
+        <mat-card-subtitle>Manage geographical regions and their zones</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="loading-container" *ngIf="isLoading">
+          <mat-spinner></mat-spinner>
+          <p>Loading regions...</p>
+        </div>
+
+        <div class="table-container" *ngIf="!isLoading">
+          <table mat-table [dataSource]="regions" class="region-table">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Region Name</th>
+              <td mat-cell *matCellDef="let region">
+                <div class="region-info">
+                  <mat-icon class="region-icon">location_on</mat-icon>
+                  <div class="region-details">
+                    <div class="region-name">{{ region.regionName }}</div>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Head Column -->
+            <ng-container matColumnDef="headOfRegion">
+              <th mat-header-cell *matHeaderCellDef>Head of Region</th>
+              <td mat-cell *matCellDef="let region">
+                <div class="head-info">
+                  <mat-icon class="head-icon">person</mat-icon>
+                  <span>{{ getHeadName(region) }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Zones Count Column -->
+            <ng-container matColumnDef="zonesCount">
+              <th mat-header-cell *matHeaderCellDef>Zones</th>
+              <td mat-cell *matCellDef="let region">
+                <mat-chip-set>
+                  <mat-chip>{{ getZonesCount(region) }} zones</mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="createdDate">
+              <th mat-header-cell *matHeaderCellDef>Created</th>
+              <td mat-cell *matCellDef="let region">
+                {{ formatDate(region.creation_Date) }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let region">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="onEditRegion(region)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                  </button>
+                  <button mat-menu-item (click)="onDeleteRegion(region)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="regions.length === 0">
+            <mat-icon>location_on</mat-icon>
+            <p>No regions found</p>
+            <button mat-raised-button color="primary" (click)="onCreateRegion()">
+              Create First Region
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Create/Edit Form -->
+    <mat-card class="form-card" *ngIf="showCreateForm || showEditForm">
+      <mat-card-header>
+        <mat-card-title>{{ showCreateForm ? 'Create Region' : 'Edit Region' }}</mat-card-title>
+        <mat-card-subtitle>{{ showCreateForm ? 'Add a new geographical region' : 'Update region details' }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="regionForm" (ngSubmit)="onSubmitForm()" class="region-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Region Name</mat-label>
+              <input matInput formControlName="regionName" placeholder="Enter region name" required>
+              <mat-error *ngIf="regionForm.get('regionName')?.hasError('required')">
+                Region name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Head of Region</mat-label>
+              <mat-select formControlName="headOfRegionId">
+                <mat-option [value]="null">No Head</mat-option>
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.first_Name }} {{ user.last_Name }} ({{ user.email }})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelForm()">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="regionForm.invalid">
+              {{ showCreateForm ? 'Create Region' : 'Update Region' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Region Details with Zones -->
+    <mat-card class="details-card" *ngIf="!showCreateForm && !showEditForm && regions.length > 0">
+      <mat-card-header>
+        <mat-card-title>Region Details</mat-card-title>
+        <mat-card-subtitle>View zones and hierarchy for each region</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <mat-accordion multi="true">
+          <mat-expansion-panel *ngFor="let region of regions">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon class="region-icon">location_on</mat-icon>
+                {{ region.regionName }}
+              </mat-panel-title>
+              <mat-panel-description>
+                {{ getZonesCount(region) }} zones • Head: {{ getHeadName(region) }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+            
+            <div class="region-details-content">
+              <div class="region-info-section">
+                <h4>Region Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <mat-icon>person</mat-icon>
+                    <span><strong>Head:</strong> {{ getHeadName(region) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span><strong>Created:</strong> {{ formatDate(region.creation_Date) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <mat-icon>location_on</mat-icon>
+                    <span><strong>Zones:</strong> {{ getZonesCount(region) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="zones-section" *ngIf="region.zones && region.zones.length > 0">
+                <h4>Zones in this Region</h4>
+                <div class="zones-grid">
+                  <mat-card class="zone-card" *ngFor="let zone of region.zones">
+                    <mat-card-content>
+                      <div class="zone-info">
+                        <mat-icon class="zone-icon">place</mat-icon>
+                        <div class="zone-details">
+                          <div class="zone-name">{{ zone.zoneName }}</div>
+                          <div class="zone-head" *ngIf="zone.headOfZone">
+                            Head: {{ zone.headOfZone.first_Name }} {{ zone.headOfZone.last_Name }}
+                          </div>
+                          <div class="zone-sectors" *ngIf="zone.sectors">
+                            {{ zone.sectors.length }} sectors
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+
+              <div class="no-zones" *ngIf="!region.zones || region.zones.length === 0">
+                <mat-icon>place</mat-icon>
+                <p>No zones assigned to this region</p>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
